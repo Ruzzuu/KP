@@ -84,7 +84,6 @@ const App = () => {
                 <Hero />  {/* Section banner utama dengan CTA dan animasi typing */}
               </div>
               <Tentang />       {/* Section tentang organisasi PERGUNU */}
-              <StatsSection />  {/* Section statistik (jumlah anggota, achievement) */}
               <Anggota />       {/* Section tim inti dan keanggotaan */}
               <Berita />        {/* Section berita terbaru (3 artikel) */}
               <BeasiswaCard />  {/* Section program beasiswa dan bantuan */}
