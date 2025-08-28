@@ -9,7 +9,6 @@ import Navbar from "./componen/Navbar/Navbar";           // Navigation bar
 import Hero from "./componen/Hero/Hero";                 // Hero section dengan animasi
 import Tentang from "./componen/Tentang/Tentang";        // Section tentang PERGUNU
 import Berita from "./componen/Berita/Berita";           // Grid berita terbaru
-import StatsSection from "./componen/Stats/StatsSection"; // Statistik organisasi
 import Anggota from "./componen/Anggota/Anggota";        // Tim dan anggota
 import Layanan from "./componen/Layanan/Layanan";        // Layanan yang ditawarkan
 import Sponsor from "./componen/Sponsor/Sponsor";        // Partner dan sponsor
