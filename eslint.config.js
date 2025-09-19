@@ -8,9 +8,32 @@ import { defineConfig, globalIgnores } from 'eslint/config' // Helper untuk konf
 export default defineConfig([
   // Ignore folder dist (hasil build) dari linting
   globalIgnores(['dist']),
+  
+  // Configuration for API/server files (Node.js environment)
+  {
+    files: ['api/**/*.js', 'file-server.js', 'fix-password.js'],
+    extends: [js.configs.recommended],
+    languageOptions: {
+      ecmaVersion: 2022,
+      globals: {
+        ...globals.node, // Node.js globals (process, Buffer, __dirname, etc.)
+        console: 'readonly'
+      },
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+      },
+    },
+    rules: {
+      // Allow unused variables that start with underscore (conventional)
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+    },
+  },
+  
+  // Configuration for client-side React files
   {
     // File yang akan di-lint (JavaScript dan JSX)
-    files: ['**/*.{js,jsx}'],
+    files: ['src/**/*.{js,jsx}'],
     
     // Extend konfigurasi yang sudah ada
     extends: [

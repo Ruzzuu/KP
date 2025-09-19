@@ -77,7 +77,9 @@ export const ApplicationService = {
         try {
           const parsed = JSON.parse(local);
           return normalizeList(parsed);
-        } catch {}
+        } catch (parseError) {
+          console.warn('Failed to parse local applications:', parseError);
+        }
       }
     }
     try {
@@ -87,8 +89,8 @@ export const ApplicationService = {
         const data = await resp.json();
         return normalizeList(data);
       }
-    } catch (e) {
-      // ignore and fallback
+    } catch {
+      // ignore and fallback to localStorage
     }
     // Fallback to localStorage persisted state first, then demo
     const local = localStorage.getItem('applications');
@@ -96,7 +98,9 @@ export const ApplicationService = {
       try {
         const parsed = JSON.parse(local);
         if (Array.isArray(parsed)) return normalizeList(parsed);
-      } catch {}
+      } catch (parseError) {
+        console.warn('Failed to parse local applications fallback:', parseError);
+      }
     }
     return normalizeList(demoApplications);
   },
@@ -120,11 +124,13 @@ export const ApplicationService = {
         try {
           localStorage.removeItem('applications_mode');
           localStorage.removeItem('applications');
-        } catch {}
+        } catch (storageError) {
+          console.warn('Failed to clear applications mode:', storageError);
+        }
         return application;
       }
-    } catch (e) {
-      // ignore and fallback
+    } catch {
+      // ignore and fallback to localStorage
     }
     // Local fallback: update in localStorage
     const apps = await this.getApplications();
@@ -148,11 +154,13 @@ export const ApplicationService = {
         try {
           localStorage.removeItem('applications_mode');
           localStorage.removeItem('applications');
-        } catch {}
+        } catch (storageError) {
+          console.warn('Failed to clear applications mode:', storageError);
+        }
         return application;
       }
-    } catch (e) {
-      // ignore and fallback
+    } catch {
+      // ignore and fallback to localStorage
     }
     const apps = await this.getApplications();
     const updated = apps.map(a => a.id === id ? { ...a, status: 'rejected', processedAt: new Date().toISOString(), rejectionReason: reason } : a);
@@ -171,11 +179,13 @@ export const ApplicationService = {
         try {
           localStorage.removeItem('applications_mode');
           localStorage.removeItem('applications');
-        } catch {}
+        } catch (storageError) {
+          console.warn('Failed to clear applications mode:', storageError);
+        }
         return true;
       }
-    } catch (e) {
-      // ignore and fallback
+    } catch {
+      // ignore and fallback to localStorage
     }
     const apps = await this.getApplications();
     const updated = apps.filter(a => a.id !== id);
@@ -232,7 +242,7 @@ export const ApplicationService = {
       const { user, username: finalUsername } = await this.registerUserFromApplication(application, { username, password });
       const updatedApp = await this.approveApplication(application.id, { username: finalUsername });
       return { application: updatedApp, user };
-    } catch (e) {
+    } catch {
       // Fallback: local-only (AdminDashboard server users list won't reflect this)
       const apps = await this.getApplications();
       const updated = apps.map(a => a.id === application.id ? { ...a, status: 'approved', processedAt: new Date().toISOString(), username } : a);
@@ -254,7 +264,9 @@ export const ApplicationService = {
           createdAt: new Date().toISOString()
         });
         localStorage.setItem('users', JSON.stringify(localUsers));
-      } catch {}
+      } catch (storageError) {
+        console.warn('Failed to save local users:', storageError);
+      }
       return { application: updated.find(a => a.id === application.id), user: null };
     }
   }

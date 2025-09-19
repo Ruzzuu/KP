@@ -2,11 +2,11 @@ import React, { useEffect, useState } from "react";
 import "./Tentang.css";
 
 const TentangCard = ({ title, children, isOpen, onToggle }) => {
-  const [shouldAnimate, setShouldAnimate] = useState(false);
+  const [_shouldAnimate, _setShouldAnimate] = useState(false);
 
   useEffect(() => {
-    setShouldAnimate(true);
-  }, []);
+    _setShouldAnimate(true);
+  }, [_setShouldAnimate]);
 
   return (
     <div

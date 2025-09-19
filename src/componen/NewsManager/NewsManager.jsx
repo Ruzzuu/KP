@@ -1,24 +1,3 @@
-  // Set berita sebagai featured (utama)
-  const handleSetFeatured = async (newsId) => {
-    try {
-      const response = await fetch(`${API_BASE}/news/${newsId}/feature`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ featured: true })
-      });
-      
-      if (response.ok) {
-        setSuccess('Berita dijadikan utama!');
-        await fetchNews();
-        // Trigger custom event for live update
-        window.dispatchEvent(new Event('news-updated'));
-      } else {
-        setError('Gagal menjadikan berita utama');
-      }
-    } catch (err) {
-      setError('Gagal koneksi ke server');
-    }
-  };
 // NewsManager.jsx - Komponen untuk mengelola berita dengan editor seperti GitHub
 import React, { useState, useEffect, useRef } from 'react';
 import Quill from 'quill';
@@ -98,7 +77,7 @@ export default function NewsManager() {
       } else {
         setError('Gagal memuat data berita');
       }
-    } catch (err) {
+    } catch (_error) {
       setError('Error koneksi ke server');
     } finally {
       setIsLoading(false);
@@ -257,7 +236,7 @@ export default function NewsManager() {
       }
       quillInstance.current.root.innerHTML = formData.content || '';
     }
-  }, [formData.content]);
+  }, [formData.content, quillInstance]);
 
   // Function untuk reset Quill editor - IMPROVED VERSION
   const resetQuillEditor = () => {
@@ -426,7 +405,7 @@ export default function NewsManager() {
         const errorData = await response.json();
         setError(errorData.error || 'Gagal menyimpan berita');
       }
-    } catch (err) {
+    } catch (_error) {
       setError('Error koneksi ke server');
     } finally {
       setIsLoading(false);
@@ -462,6 +441,28 @@ export default function NewsManager() {
     }, 150); // Slightly longer timeout for better reliability
   };
 
+  // Set berita sebagai featured (utama)
+  const handleSetFeatured = async (newsId) => {
+    try {
+      const response = await fetch(`${API_BASE}/news/${newsId}/feature`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ featured: true })
+      });
+      
+      if (response.ok) {
+        setSuccess('Berita dijadikan utama!');
+        await fetchNews();
+        // Trigger custom event for live update
+        window.dispatchEvent(new Event('news-updated'));
+      } else {
+        setError('Gagal menjadikan berita utama');
+      }
+    } catch (_error) {
+      setError('Gagal koneksi ke server');
+    }
+  };
+
   // Delete berita
   const handleDelete = async (newsId) => {
     if (!window.confirm('Apakah Anda yakin ingin menghapus berita ini?')) {
@@ -480,7 +481,7 @@ export default function NewsManager() {
       } else {
         setError('Gagal menghapus berita');
       }
-    } catch (err) {
+    } catch (_error) {
       setError('Error koneksi ke server');
     } finally {
       setIsLoading(false);
@@ -512,8 +513,8 @@ export default function NewsManager() {
     }, 50);
   };
 
-  // Render konten dengan format markdown lengkap
-  const renderPreview = (content) => {
+  // Render konten dengan format markdown lengkap (currently unused but available for future use)
+  const _renderPreview = (content) => {
     if (!content) return <p className="preview-empty">Tidak ada konten untuk dipreview</p>;
     
     // Parse markdown dengan format lengkap
@@ -527,10 +528,10 @@ export default function NewsManager() {
       // Bold dan Italic (urutan penting!)
       .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>') // Bold + Italic
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
-      .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
+      .replace(/\*([^*]*)\*/g, '<em>$1</em>') // Italic
       // Lists dengan (-) dan (*)
       .replace(/^- (.*$)/gm, '<li>$1</li>')
-      .replace(/^\* (.*$)/gm, '<li>$1</li>')
+      .replace(/^\\* (.*$)/gm, '<li>$1</li>')
       // Wrap consecutive list items
       .replace(/(<li>.*<\/li>(?:\s*<li>.*<\/li>)*)/gs, '<ul>$1</ul>')
       // Links

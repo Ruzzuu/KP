@@ -605,24 +605,6 @@
       "credentials": null,
       "createdAt": "2025-08-09T20:42:09.535Z",
       "updatedAt": "2025-08-09T20:42:09.535Z"
-    },
-    {
-      "id": "1755263873564",
-      "fullName": "kimcil kenjeran",
-      "email": "kimcilpulen@mhs.unsoed.ac.id",
-      "phone": "0816969696969",
-      "position": "ustad",
-      "school": "SMA Alqohol",
-      "pw": "PW PERGUNU Jawa Timur",
-      "pc": "PC Pergunu Kota Surabaya",
-      "experience": "8-15 tahun",
-      "education": "S3",
-      "status": "pending",
-      "submittedAt": "2025-08-15T13:17:53.564Z",
-      "processedAt": null,
-      "credentials": null,
-      "createdAt": "2025-08-15T13:17:53.606Z",
-      "updatedAt": "2025-08-15T13:17:53.606Z"
     }
   ],
   "statistics": {

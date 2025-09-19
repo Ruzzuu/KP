@@ -1,13 +1,18 @@
-const bcrypt = require('bcrypt');
-const fs = require('fs');
-const path = require('path');
+import bcrypt from 'bcryptjs';
+import { readFileSync, writeFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// Get directory path for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 async function fixAdminPassword() {
   console.log('🔐 Fixing admin password...');
   
   // Read database
-  const dbPath = path.join(__dirname, 'api', 'db.json');
-  const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+  const dbPath = join(__dirname, 'api', 'db.json');
+  const db = JSON.parse(readFileSync(dbPath, 'utf8'));
   
   // Test current admin password
   const admin = db.users.find(u => u.username === 'admin');
@@ -43,7 +48,7 @@ async function fixAdminPassword() {
     admin.password = newHash;
     
     // Save database
-    fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
+    writeFileSync(dbPath, JSON.stringify(db, null, 2));
     console.log('✅ Password updated to "admin123"');
   }
   

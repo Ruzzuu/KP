@@ -31,7 +31,8 @@ const broadcastToClients = (event, data) => {
     try {
       client.write(message);
     } catch (error) {
-      // Remove dead connections
+      // Remove dead connections - log error for debugging
+      console.error('SSE client write error:', error.message);
       sseClients.delete(client);
     }
   });
@@ -52,7 +53,9 @@ const corsOptions = {
         'https://your-frontend-domain.vercel.app'
       ]);
       if (allowList.has(origin)) return callback(null, true);
-    } catch {}
+    } catch (error) {
+      console.error('Invalid origin URL:', error.message);
+    }
     return callback(null, false);
   },
   credentials: true
@@ -274,7 +277,7 @@ app.post('/api/register', async (req, res) => {
   db.users.push(newUser);
   
   if (writeDB(db)) {
-    const { password, ...userWithoutPassword } = newUser;
+    const { password: _, ...userWithoutPassword } = newUser;
     res.status(201).json(userWithoutPassword);
   } else {
     res.status(500).json({ error: 'Failed to create user' });
@@ -309,7 +312,7 @@ app.post('/api/login', async (req, res) => {
   db.sessions.push(session);
   writeDB(db);
   
-  const { password: _, ...userWithoutPassword } = user;
+  const { password: _pwd, ...userWithoutPassword } = user;
   res.json({ user: userWithoutPassword, sessionId });
 });
 
@@ -355,7 +358,7 @@ app.post('/api/auth/login', async (req, res) => {
   db.sessions.push(session);
   writeDB(db);
   
-  const { password: _, ...userWithoutPassword } = user;
+  const { password: _pwd, ...userWithoutPassword } = user;
   res.json({ 
     success: true,
     user: userWithoutPassword, 
@@ -398,7 +401,7 @@ app.post('/api/auth/register', async (req, res) => {
   const success = writeDB(db);
   
   if (success) {
-    const { password: _, ...userWithoutPassword } = newUser;
+    const { password: _pwd, ...userWithoutPassword } = newUser;
     res.status(201).json({
       success: true,
       user: userWithoutPassword,
@@ -465,6 +468,26 @@ app.put('/api/applications/:id/status', (req, res) => {
   }
 });
 
+// DELETE /api/applications/:id - Delete application (remove from history)
+app.delete('/api/applications/:id', (req, res) => {
+  const db = readDB();
+  const appIndex = db.applications.findIndex(app => app.id === req.params.id);
+  
+  if (appIndex === -1) {
+    return res.status(404).json({ error: 'Application not found' });
+  }
+  
+  // Remove application from array
+  db.applications.splice(appIndex, 1);
+  
+  if (writeDB(db)) {
+    console.log(`🗑️ Application ${req.params.id} deleted successfully`);
+    res.status(204).send(); // 204 No Content for successful deletion
+  } else {
+    res.status(500).json({ error: 'Failed to delete application' });
+  }
+});
+
 // ===== USER MANAGEMENT ENDPOINTS =====
 
 // GET /api/users - Get all users (for admin dashboard)
@@ -474,7 +497,7 @@ app.get('/api/users', (req, res) => {
   
   // Remove passwords from response
   const usersWithoutPasswords = db.users.map(user => {
-    const { password, ...userWithoutPassword } = user;
+    const { password: _pwd, ...userWithoutPassword } = user;
     return userWithoutPassword;
   });
   
@@ -491,7 +514,7 @@ app.get('/api/users/:id', (req, res) => {
   }
   
   // Remove password from response
-  const { password, ...userWithoutPassword } = user;
+  const { password: _pwd, ...userWithoutPassword } = user;
   res.json(userWithoutPassword);
 });
 
@@ -518,7 +541,7 @@ app.put('/api/users/:id', async (req, res) => {
   db.users[userIndex] = updatedUser;
   
   if (writeDB(db)) {
-    const { password, ...userWithoutPassword } = updatedUser;
+    const { password: _pwd, ...userWithoutPassword } = updatedUser;
     res.json(userWithoutPassword);
   } else {
     res.status(500).json({ error: 'Failed to update user' });
@@ -538,7 +561,7 @@ app.delete('/api/users/:id', (req, res) => {
   db.users.splice(userIndex, 1);
   
   if (writeDB(db)) {
-    const { password, ...userWithoutPassword } = deletedUser;
+    const { password: _pwd, ...userWithoutPassword } = deletedUser;
     res.json({ message: 'User deleted successfully', deletedUser: userWithoutPassword });
   } else {
     res.status(500).json({ error: 'Failed to delete user' });
@@ -550,7 +573,9 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'healthy', 
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    nodeVersion: process.version,
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 

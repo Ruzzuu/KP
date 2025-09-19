@@ -248,59 +248,6 @@ class ApiService {
         user: result.user,
         message: result.message
       };
-      console.log('📝 Looking for username:', credentials.username);
-      
-      // === STEP 2: USER LOOKUP ===
-      // Cari user berdasarkan email atau username (flexible login)
-      const user = users.find(u => {
-        const emailMatch = u.email === credentials.username;    // Match dengan email
-        const usernameMatch = u.username === credentials.username; // Match dengan username
-        console.log(`🔍 Checking user ${u.username}: email=${emailMatch}, username=${usernameMatch}`);
-        return emailMatch || usernameMatch;
-      });
-
-      console.log('🔍 User search result:', user ? `Found: ${user.fullName} (${user.role})` : 'Not found');
-
-      if (!user) {
-        throw new Error('User tidak ditemukan');
-      }
-
-      console.log('🔐 Starting password verification...');
-      console.log('🔑 Input password:', credentials.password);
-      console.log('🔒 Stored hash:', user.password);
-      
-      // === STEP 3: PASSWORD VERIFICATION ===
-      // Verify password menggunakan bcrypt compare yang secure
-      const isPasswordValid = await this.verifyPassword(credentials.password, user.password);
-      
-      console.log('✅ Password verification result:', isPasswordValid);
-      
-      if (!isPasswordValid) {
-        throw new Error('Password salah');
-      }
-
-      console.log('🎫 Creating session...');
-      
-      // === STEP 4: SESSION CREATION ===
-      // Create session token untuk maintain user state
-      const sessionResponse = await fetch(`${this.API_URL}/sessions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,                                    // Link session ke user ID
-          token: `session_${Date.now()}`,                    // Generate unique token
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours expiry
-        })
-      });
-
-      const session = await sessionResponse.json();
-      console.log('🎉 Login successful for:', user.fullName);
-      
-      // Return user data tanpa password + session token
-      return {
-        user: { ...user, password: undefined }, // NEVER return password untuk security
-        session: session.token
-      };
     } catch (error) {
       console.error('❌ JSON Server login error:', error.message);
       console.error('📝 Full error details:', error);
@@ -326,8 +273,8 @@ class ApiService {
   // === LOCALSTORAGE IMPLEMENTATIONS (FALLBACK METHODS) ===
   
   // Registration implementation untuk localStorage fallback
-  registerWithLocalStorage(userData) {
-    return new Promise(async (resolve, reject) => {
+  async registerWithLocalStorage(userData) {
+    try {
       // Get existing users dari localStorage
       const users = JSON.parse(localStorage.getItem('users') || '[]');
       
@@ -338,8 +285,7 @@ class ApiService {
       );
       
       if (userExists) {
-        reject(new Error('User already exists'));
-        return;
+        throw new Error('User already exists');
       }
       
       // === PASSWORD HASHING ===
@@ -359,13 +305,15 @@ class ApiService {
       users.push(newUser);
       localStorage.setItem('users', JSON.stringify(users));
       
-      resolve(newUser); // Return created user
-    });
+      return newUser; // Return created user
+    } catch (error) {
+      throw error;
+    }
   }
 
   // Login implementation untuk localStorage fallback
-  loginWithLocalStorage(credentials) {
-    return new Promise(async (resolve, reject) => {
+  async loginWithLocalStorage(credentials) {
+    try {
       console.log('📦 Using localStorage mode...');
       const users = JSON.parse(localStorage.getItem('users') || '[]');
       console.log('💾 LocalStorage users found:', users.length);
@@ -418,8 +366,7 @@ class ApiService {
       console.log('👤 User found:', user ? `${user.fullName} (${user.role})` : 'Not found');
       
       if (!user) {
-        reject(new Error('User tidak ditemukan'));
-        return;
+        throw new Error('User tidak ditemukan');
       }
 
       // === PASSWORD VERIFICATION ===
@@ -430,8 +377,7 @@ class ApiService {
       console.log('✅ Password valid:', isPasswordValid);
       
       if (!isPasswordValid) {
-        reject(new Error('Password salah'));
-        return;
+        throw new Error('Password salah');
       }
       
       // === SESSION CREATION ===
@@ -442,11 +388,13 @@ class ApiService {
       }));
       
       // Return user data + session token
-      resolve({
+      return {
         user: { ...user, password: undefined }, // Remove password dari response
         session: `localStorage_session_${Date.now()}` // Generate session token
-      });
-    });
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   // === UTILITY METHODS ===

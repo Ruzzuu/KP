@@ -29,7 +29,9 @@ const corsOptions = {
         'https://your-frontend-domain.vercel.app'
       ]);
       if (allowList.has(origin)) return callback(null, true);
-    } catch {}
+    } catch (error) {
+      console.error('Invalid origin URL:', error.message);
+    }
     return callback(null, false);
   },
   credentials: true
@@ -257,7 +259,6 @@ app.delete('/delete-certificate/:certificateId', async (req, res) => {
     
     // Find certificate in any user's certificates
     let certificate = null;
-    let user = null;
     let userIndex = -1;
     let certIndex = -1;
 
@@ -267,7 +268,6 @@ app.delete('/delete-certificate/:certificateId', async (req, res) => {
         for (let j = 0; j < u.certificates.length; j++) {
           if (u.certificates[j].id && u.certificates[j].id.toString() === certificateId) {
             certificate = u.certificates[j];
-            user = u;
             userIndex = i;
             certIndex = j;
             break;
@@ -315,7 +315,7 @@ app.delete('/delete-certificate/:certificateId', async (req, res) => {
 });
 
 // ===== ERROR HANDLING =====
-app.use((error, req, res, next) => {
+app.use((error, req, res, _next) => {
   if (error instanceof multer.MulterError) {
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({ error: 'File too large. Maximum size is 10MB.' });
@@ -347,7 +347,7 @@ app.listen(PORT, 'localhost', (err) => {
   // Test the server is reachable
   setTimeout(() => {
     import('http').then(http => {
-      const req = http.get(`http://localhost:${PORT}/health`, (res) => {
+      const req = http.get(`http://localhost:${PORT}/health`, (_res) => {
         console.log('✅ Self-test successful: Server is reachable');
       });
       req.on('error', (err) => {
