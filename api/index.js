@@ -412,6 +412,253 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
+// ===== BEASISWA ENDPOINTS =====
+// Function untuk menghitung status otomatis berdasarkan tanggal
+const calculateBeasiswaStatus = (tanggal_mulai, deadline) => {
+  const now = new Date();
+  const startDate = new Date(tanggal_mulai);
+  const endDate = new Date(deadline);
+  
+  if (now < startDate) {
+    return 'Segera'; // Belum dimulai
+  } else if (now >= startDate && now <= endDate) {
+    return 'Buka'; // Sedang berlangsung
+  } else {
+    return 'Tutup'; // Sudah berakhir
+  }
+};
+
+// GET /api/beasiswa - Get all beasiswa with auto-calculated status
+app.get('/api/beasiswa', (req, res) => {
+  const db = readDB();
+  
+  // Update status otomatis untuk semua beasiswa
+  const beasiswaWithStatus = (db.beasiswa || []).map(beasiswa => ({
+    ...beasiswa,
+    status: calculateBeasiswaStatus(beasiswa.tanggal_mulai, beasiswa.deadline)
+  }));
+  
+  console.log('🎓 Returning', beasiswaWithStatus.length, 'beasiswa items');
+  res.json(beasiswaWithStatus);
+});
+
+// GET /api/beasiswa/:id - Get beasiswa by ID with auto-calculated status
+app.get('/api/beasiswa/:id', (req, res) => {
+  const db = readDB();
+  const beasiswa = (db.beasiswa || []).find(b => b.id === req.params.id);
+  
+  if (!beasiswa) {
+    return res.status(404).json({ error: 'Beasiswa not found' });
+  }
+  
+  // Update status otomatis
+  const beasiswaWithStatus = {
+    ...beasiswa,
+    status: calculateBeasiswaStatus(beasiswa.tanggal_mulai, beasiswa.deadline)
+  };
+  
+  res.json(beasiswaWithStatus);
+});
+
+// POST /api/beasiswa - Create new beasiswa
+app.post('/api/beasiswa', (req, res) => {
+  const db = readDB();
+  
+  // Validate required fields
+  const requiredFields = ['judul', 'nominal', 'deadline', 'tanggal_mulai', 'deskripsi', 'persyaratan', 'kategori'];
+  for (const field of requiredFields) {
+    if (!req.body[field]) {
+      return res.status(400).json({ error: `Field ${field} is required` });
+    }
+  }
+  
+  const newBeasiswa = {
+    id: Date.now().toString(),
+    judul: req.body.judul,
+    nominal: req.body.nominal,
+    deadline: req.body.deadline,
+    tanggal_mulai: req.body.tanggal_mulai,
+    status: calculateBeasiswaStatus(req.body.tanggal_mulai, req.body.deadline), // Auto-calculate
+    deskripsi: req.body.deskripsi,
+    persyaratan: Array.isArray(req.body.persyaratan) ? req.body.persyaratan : [req.body.persyaratan],
+    kategori: req.body.kategori,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  
+  // Initialize beasiswa array if not exists
+  if (!db.beasiswa) {
+    db.beasiswa = [];
+  }
+  
+  db.beasiswa.push(newBeasiswa);
+  
+  if (writeDB(db)) {
+    broadcastToClients('beasiswa-added', newBeasiswa);
+    res.status(201).json(newBeasiswa);
+  } else {
+    res.status(500).json({ error: 'Failed to save beasiswa' });
+  }
+});
+
+// PUT /api/beasiswa/:id - Update beasiswa
+app.put('/api/beasiswa/:id', (req, res) => {
+  const db = readDB();
+  const beasiswaIndex = (db.beasiswa || []).findIndex(b => b.id === req.params.id);
+  
+  if (beasiswaIndex === -1) {
+    return res.status(404).json({ error: 'Beasiswa not found' });
+  }
+  
+  const updatedBeasiswa = {
+    ...db.beasiswa[beasiswaIndex],
+    ...req.body,
+    // Auto-calculate status jika tanggal diubah
+    status: calculateBeasiswaStatus(
+      req.body.tanggal_mulai || db.beasiswa[beasiswaIndex].tanggal_mulai,
+      req.body.deadline || db.beasiswa[beasiswaIndex].deadline
+    ),
+    updatedAt: new Date().toISOString()
+  };
+  
+  db.beasiswa[beasiswaIndex] = updatedBeasiswa;
+  
+  if (writeDB(db)) {
+    broadcastToClients('beasiswa-updated', updatedBeasiswa);
+    res.json(updatedBeasiswa);
+  } else {
+    res.status(500).json({ error: 'Failed to update beasiswa' });
+  }
+});
+
+// DELETE /api/beasiswa/:id - Delete beasiswa
+app.delete('/api/beasiswa/:id', (req, res) => {
+  const db = readDB();
+  const beasiswaIndex = (db.beasiswa || []).findIndex(b => b.id === req.params.id);
+  
+  if (beasiswaIndex === -1) {
+    return res.status(404).json({ error: 'Beasiswa not found' });
+  }
+  
+  const deletedBeasiswa = db.beasiswa[beasiswaIndex];
+  db.beasiswa.splice(beasiswaIndex, 1);
+  
+  if (writeDB(db)) {
+    broadcastToClients('beasiswa-deleted', { id: req.params.id });
+    res.status(204).send(); // No content response for successful deletion
+  } else {
+    res.status(500).json({ error: 'Failed to delete beasiswa' });
+  }
+});
+
+// GET /api/beasiswa/kategori/:kategori - Get beasiswa by kategori
+app.get('/api/beasiswa/kategori/:kategori', (req, res) => {
+  const db = readDB();
+  const kategori = req.params.kategori;
+  
+  let filteredBeasiswa = db.beasiswa || [];
+  
+  // Filter by kategori (case insensitive), kecuali "Semua Program"
+  if (kategori !== 'Semua Program') {
+    filteredBeasiswa = filteredBeasiswa.filter(b => 
+      b.kategori.toLowerCase() === kategori.toLowerCase()
+    );
+  }
+  
+  // Update status otomatis untuk semua hasil
+  const beasiswaWithStatus = filteredBeasiswa.map(beasiswa => ({
+    ...beasiswa,
+    status: calculateBeasiswaStatus(beasiswa.tanggal_mulai, beasiswa.deadline)
+  }));
+  
+  console.log('🎓 Returning', beasiswaWithStatus.length, 'beasiswa items for kategori:', kategori);
+  res.json(beasiswaWithStatus);
+});
+
+// ===== BEASISWA APPLICATION ENDPOINTS =====
+// POST /api/beasiswa-applications - Submit beasiswa application
+app.post('/api/beasiswa-applications', (req, res) => {
+  const db = readDB();
+  
+  // Validate required fields for beasiswa application
+  const requiredFields = ['beasiswaId', 'beasiswaTitle', 'fullName', 'email', 'phone'];
+  for (const field of requiredFields) {
+    if (!req.body[field]) {
+      return res.status(400).json({ error: `Field ${field} is required` });
+    }
+  }
+  
+  const newApplication = {
+    id: Date.now().toString(),
+    beasiswaId: req.body.beasiswaId,
+    beasiswaTitle: req.body.beasiswaTitle,
+    fullName: req.body.fullName,
+    email: req.body.email,
+    phone: req.body.phone,
+    education: req.body.education || '',
+    gpa: req.body.gpa || '',
+    motivation: req.body.motivation || '',
+    status: 'pending',
+    submittedAt: req.body.submittedAt || new Date().toISOString(),
+    processedAt: null,
+    notes: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  
+  // Initialize beasiswa_applications array if not exists
+  if (!db.beasiswa_applications) {
+    db.beasiswa_applications = [];
+  }
+  
+  db.beasiswa_applications.push(newApplication);
+  
+  if (writeDB(db)) {
+    broadcastToClients('beasiswa-application-added', newApplication);
+    res.status(201).json({
+      message: 'Pendaftaran beasiswa berhasil dikirim',
+      application: newApplication
+    });
+  } else {
+    res.status(500).json({ error: 'Failed to save beasiswa application' });
+  }
+});
+
+// GET /api/beasiswa-applications - Get all beasiswa applications (admin only)
+app.get('/api/beasiswa-applications', (req, res) => {
+  const db = readDB();
+  res.json(db.beasiswa_applications || []);
+});
+
+// GET /api/beasiswa-applications/user/:email - Get applications by user email
+app.get('/api/beasiswa-applications/user/:email', (req, res) => {
+  const db = readDB();
+  const userApplications = (db.beasiswa_applications || []).filter(app => app.email === req.params.email);
+  res.json(userApplications);
+});
+
+// PUT /api/beasiswa-applications/:id/status - Update application status
+app.put('/api/beasiswa-applications/:id/status', (req, res) => {
+  const db = readDB();
+  const appIndex = (db.beasiswa_applications || []).findIndex(app => app.id === req.params.id);
+  
+  if (appIndex === -1) {
+    return res.status(404).json({ error: 'Beasiswa application not found' });
+  }
+  
+  db.beasiswa_applications[appIndex].status = req.body.status;
+  db.beasiswa_applications[appIndex].processedAt = new Date().toISOString();
+  db.beasiswa_applications[appIndex].notes = req.body.notes || '';
+  db.beasiswa_applications[appIndex].updatedAt = new Date().toISOString();
+  
+  if (writeDB(db)) {
+    broadcastToClients('beasiswa-application-updated', db.beasiswa_applications[appIndex]);
+    res.json(db.beasiswa_applications[appIndex]);
+  } else {
+    res.status(500).json({ error: 'Failed to update beasiswa application status' });
+  }
+});
+
 // ===== APPLICATION ENDPOINTS =====
 
 // POST /api/applications - Submit application

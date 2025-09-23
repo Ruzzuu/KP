@@ -15,6 +15,7 @@ import { apiService } from '../../services/apiService';            // Import API
 import { ApplicationService } from '../../services/ApplicationService';
 import { usePendingApplications } from '../../context/PendingApplicationsContext';
 import ApplicationManager from '../../componen/ApplicationManager/ApplicationManager'; // Komponen untuk manage aplikasi
+import BeasiswaManager from '../../componen/ApplicationManager/BeasiswaManager'; // Komponen untuk manage beasiswa
 import NewsManager from '../../componen/NewsManager';
 import './AdminDashboard.css';
 
@@ -1247,7 +1248,13 @@ const AdminDashboard = () => {
             className={`nav-item ${activeTab === 'news' ? 'active' : ''}`}
             onClick={() => setActiveTab('news')}
           >
-            News
+            📰 News
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'beasiswa' ? 'active' : ''}`}
+            onClick={() => setActiveTab('beasiswa')}
+          >
+            🎓 Beasiswa
           </button>
         </div>
       </nav>
@@ -1262,6 +1269,11 @@ const AdminDashboard = () => {
         {activeTab === 'news' && (
           <div className="card">
             <NewsManager />
+          </div>
+        )}
+        {activeTab === 'beasiswa' && (
+          <div className="card">
+            <BeasiswaManager />
           </div>
         )}
       </main>
