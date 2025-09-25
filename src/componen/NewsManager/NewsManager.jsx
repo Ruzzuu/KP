@@ -45,9 +45,6 @@ export default function NewsManager() {
   const getImageUrl = (imagePath) => {
     if (!imagePath) return '';
     
-    // Jika base64 data URL, gunakan langsung
-    if (imagePath.startsWith('data:image/')) return imagePath;
-    
     // Jika blob URL (untuk preview upload), gunakan langsung
     if (imagePath.startsWith('blob:')) return imagePath;
     
@@ -62,8 +59,8 @@ export default function NewsManager() {
     // Jika path dimulai dengan /, gunakan langsung
     if (imagePath.startsWith('/')) return imagePath;
     
-    // Default: anggap file upload di folder uploads
-    return `/uploads/${imagePath}`;
+    // Default: anggap file upload di folder uploads/images
+    return `http://localhost:3002/uploads/images/${imagePath}`;
   };
 
   // Fetch berita dari API
@@ -336,54 +333,51 @@ export default function NewsManager() {
         finalFormData.content = quillContent;
       }
 
-      // Handle image upload - convert to base64 for storage
+      // Handle image upload using file-server first, then submit news data
+      let response;
+      let uploadedImagePath = formData.image; // Keep existing image if no new file
+      
       if (formData.imageFile) {
-        try {
-          // Convert file to base64 for storage
-          const fileReader = new FileReader();
-          const base64Promise = new Promise((resolve, reject) => {
-            fileReader.onload = () => resolve(fileReader.result);
-            fileReader.onerror = reject;
-            fileReader.readAsDataURL(formData.imageFile);
-          });
-          
-          const base64Data = await base64Promise;
-          finalFormData.image = base64Data;
-          
-          console.log('📷 Image converted to base64 for storage');
-        } catch (uploadError) {
-          console.warn('Upload error, using existing path:', uploadError);
-          // Keep existing image if conversion fails
-          if (formData.image && !formData.image.startsWith('blob:')) {
-            finalFormData.image = formData.image;
-          } else {
-            // Remove broken blob URL
-            delete finalFormData.image;
-          }
+        // First, upload image to file-server
+        const imageFormData = new FormData();
+        imageFormData.append('image', formData.imageFile);
+        
+        console.log('📷 Uploading image file to file-server:', formData.imageFile.name);
+        
+        const imageUploadResponse = await fetch('http://localhost:3002/upload-image', {
+          method: 'POST',
+          body: imageFormData
+        });
+        
+        if (!imageUploadResponse.ok) {
+          throw new Error('Failed to upload image');
         }
-      } else if (formData.image && !formData.image.startsWith('blob:')) {
-        // Keep existing image (non-blob URLs)
-        finalFormData.image = formData.image;
-      } else {
-        // Remove blob URLs that won't persist
-        delete finalFormData.image;
+        
+        const imageResult = await imageUploadResponse.json();
+        uploadedImagePath = imageResult.filename; // Store only filename
+        console.log('✅ Image uploaded successfully:', uploadedImagePath);
       }
 
-      // Remove imageFile and imagePreview from submission data
-      delete finalFormData.imageFile;
-      delete finalFormData.imagePreview;
+      // Now submit news data with image path
+      const newsData = {
+        title: finalFormData.title,
+        content: finalFormData.content,
+        author: finalFormData.author || '',
+        category: finalFormData.category,
+        image: uploadedImagePath // Use uploaded filename or existing path
+      };
 
       const url = editingId 
         ? `${API_BASE}/news/${editingId}`
         : `${API_BASE}/news`;
       const method = editingId ? 'PUT' : 'POST';
 
-      const response = await fetch(url, {
+      response = await fetch(url, {
         method,
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(finalFormData)
+        body: JSON.stringify(newsData)
       });
 
       if (response.ok) {

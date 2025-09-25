@@ -37,12 +37,7 @@ const Berita = () => {
   const getImageWithFallback = React.useCallback((imageUrl) => {
     if (!imageUrl) return noImageImg;
     
-    // Handle base64 data URLs (from new upload system)
-    if (imageUrl.startsWith('data:image/')) {
-      return imageUrl;
-    }
-    
-    // Handle existing image mapping
+    // Handle existing image mapping (for default/asset images)
     if (imageMap[imageUrl]) return imageMap[imageUrl];
     
     // Handle external URLs
@@ -50,6 +45,14 @@ const Berita = () => {
     
     // Handle asset paths
     if (imageUrl.startsWith('/src/assets/')) return imageUrl;
+    
+    // Handle uploaded image files (filename only) - point to file-server
+    if (imageUrl && !imageUrl.includes('/') && !imageUrl.startsWith('http') && !imageUrl.startsWith('/src/')) {
+      return `http://localhost:3002/uploads/images/${imageUrl}`;
+    }
+    
+    // Handle full paths starting with /uploads - point to file-server
+    if (imageUrl.startsWith('/uploads/')) return `http://localhost:3002${imageUrl}`;
     
     // Fallback to default
     return noImageImg;
@@ -215,11 +218,12 @@ const Berita = () => {
       setRotatedItems(prevItems => {
         if (prevItems.length === 0) return prevItems;
         
-        // Tombol KIRI: Pindahkan elemen pertama ke belakang (shift → push)
+        // Tombol KIRI: Pindahkan elemen terakhir ke depan (pop → unshift)
+        // Contoh: 1,2,3,4,5 → 5,1,2,3,4
         const newItems = [...prevItems];
-        const firstItem = newItems.shift();
-        if (firstItem) {
-          newItems.push(firstItem);
+        const lastItem = newItems.pop();
+        if (lastItem) {
+          newItems.unshift(lastItem);
         }
         return newItems;
       });
@@ -235,11 +239,12 @@ const Berita = () => {
       setRotatedItems(prevItems => {
         if (prevItems.length === 0) return prevItems;
         
-        // Tombol KANAN: Pindahkan elemen terakhir ke depan (pop → unshift)
+        // Tombol KANAN: Pindahkan elemen pertama ke belakang (shift → push)
+        // Contoh: 1,2,3,4,5 → 2,3,4,5,1
         const newItems = [...prevItems];
-        const lastItem = newItems.pop();
-        if (lastItem) {
-          newItems.unshift(lastItem);
+        const firstItem = newItems.shift();
+        if (firstItem) {
+          newItems.push(firstItem);
         }
         return newItems;
       });

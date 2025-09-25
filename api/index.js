@@ -7,7 +7,7 @@
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -155,48 +155,90 @@ app.get('/api/news/:id', (req, res) => {
 
 // POST /api/news - Create new news
 app.post('/api/news', (req, res) => {
-  const db = readDB();
-  const newNews = {
-    id: Date.now().toString(),
-    title: req.body.title,
-    content: req.body.content,
-    image: req.body.image,
-    featured: req.body.featured || false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
-  
-  db.news.push(newNews);
-  if (writeDB(db)) {
-    broadcastToClients('news-added', newNews);
-    res.status(201).json(newNews);
-  } else {
-    res.status(500).json({ error: 'Failed to save news' });
+  try {
+    const db = readDB();
+    
+    // Get image path from request body (uploaded via file-server)
+    const imagePath = req.body.image || null;
+    
+    const newNews = {
+      id: Date.now().toString(),
+      title: req.body.title,
+      content: req.body.content,
+      author: req.body.author || '',
+      category: req.body.category || 'general',
+      image: imagePath,
+      featured: req.body.featured || false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    console.log('📰 Creating new news:', {
+      title: newNews.title,
+      hasImage: !!imagePath,
+      imagePath: imagePath
+    });
+    
+    db.news.push(newNews);
+    if (writeDB(db)) {
+      broadcastToClients('news-added', newNews);
+      res.status(201).json(newNews);
+    } else {
+      res.status(500).json({ error: 'Failed to save news' });
+    }
+  } catch (error) {
+    console.error('Error creating news:', error);
+    res.status(500).json({ error: 'Failed to create news: ' + error.message });
   }
 });
 
 // PUT /api/news/:id - Update news
 app.put('/api/news/:id', (req, res) => {
-  const db = readDB();
-  const newsIndex = db.news.findIndex(n => n.id === req.params.id);
-  
-  if (newsIndex === -1) {
-    return res.status(404).json({ error: 'News not found' });
-  }
-  
-  const updatedNews = {
-    ...db.news[newsIndex],
-    ...req.body,
-    updatedAt: new Date().toISOString()
-  };
-  
-  db.news[newsIndex] = updatedNews;
-  
-  if (writeDB(db)) {
-    broadcastToClients('news-updated', updatedNews);
-    res.json(updatedNews);
-  } else {
-    res.status(500).json({ error: 'Failed to update news' });
+  try {
+    const db = readDB();
+    const newsIndex = db.news.findIndex(n => n.id === req.params.id);
+    
+    if (newsIndex === -1) {
+      return res.status(404).json({ error: 'News not found' });
+    }
+    
+    // Get image path from request body (uploaded via file-server) or keep existing
+    let imagePath = db.news[newsIndex].image; // Keep existing image by default
+    
+    if (req.body.image !== undefined) {
+      // Image field provided in JSON (could be null to remove image, or filename from file-server)
+      imagePath = req.body.image;
+    }
+    
+    const updatedNews = {
+      ...db.news[newsIndex],
+      title: req.body.title || db.news[newsIndex].title,
+      content: req.body.content || db.news[newsIndex].content,
+      author: req.body.author !== undefined ? req.body.author : db.news[newsIndex].author,
+      category: req.body.category || db.news[newsIndex].category,
+      image: imagePath,
+      featured: req.body.featured !== undefined ? req.body.featured : db.news[newsIndex].featured,
+      updatedAt: new Date().toISOString()
+    };
+    
+    console.log('📰 Updating news:', {
+      id: req.params.id,
+      title: updatedNews.title,
+      hasNewImage: !!req.file,
+      imagePath: imagePath
+    });
+    
+    db.news[newsIndex] = updatedNews;
+    
+    if (writeDB(db)) {
+      broadcastToClients('news-updated', updatedNews);
+      res.json(updatedNews);
+    } else {
+      res.status(500).json({ error: 'Failed to update news' });
+    }
+  } catch (error) {
+    console.error('Error updating news:', error);
+    res.status(500).json({ error: 'Failed to update news: ' + error.message });
   }
 });
 

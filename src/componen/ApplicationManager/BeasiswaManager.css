@@ -260,6 +260,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
   gap: 20px;
+  /* Ensure all grid items in a row have the same height */
+  align-items: stretch;
 }
 
 .beasiswa-card {
@@ -269,6 +271,11 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   transition: 0.3s ease;
   border: 1px solid #e5e7eb;
+  
+  /* Flexbox layout to ensure consistent card height and button alignment */
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Allow card to stretch to full grid row height */
 }
 
 .beasiswa-card:hover {
@@ -355,10 +362,12 @@
   font-size: 14px;
   line-height: 1.5;
   margin-bottom: 12px;
+  flex-grow: 1; /* Allow description to grow and fill available space */
 }
 
 .persyaratan-preview {
   margin-bottom: 16px;
+  flex-shrink: 0; /* Prevent requirements from shrinking */
 }
 
 .persyaratan-preview strong {
@@ -380,21 +389,26 @@
 .card-actions {
   display: flex;
   gap: 8px;
-  margin-top: 16px;
+  margin-top: auto; /* Push buttons to bottom of card */
   padding-top: 16px;
   border-top: 1px solid #e5e7eb;
+  flex-shrink: 0; /* Prevent actions from shrinking */
 }
 
 .btn-edit,
 .btn-delete {
   flex: 1;
-  padding: 8px 12px;
+  padding: 10px 12px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
   transition: 0.2s ease;
+  min-height: 36px; /* Ensure consistent button height */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-edit {
@@ -443,6 +457,7 @@
   
   .beasiswa-grid {
     grid-template-columns: 1fr;
+    gap: 16px; /* Smaller gap on mobile */
   }
   
   .card-header {
@@ -452,6 +467,20 @@
   
   .beasiswa-nominal {
     margin-left: 0;
+  }
+  
+  .beasiswa-card {
+    padding: 16px; /* Less padding on mobile */
+  }
+  
+  .card-actions {
+    gap: 12px; /* Larger gap between buttons on mobile */
+  }
+  
+  .btn-edit,
+  .btn-delete {
+    padding: 12px; /* Larger touch targets on mobile */
+    font-size: 13px;
   }
   
   .card-meta {

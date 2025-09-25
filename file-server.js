@@ -42,11 +42,17 @@ app.use(express.json({ limit: '50mb' }));
 
 // ===== UPLOAD CONFIGURATION =====
 const uploadDir = join(__dirname, 'uploads', 'certificates');
+const imageUploadDir = join(__dirname, 'uploads', 'images');
 
-// Ensure upload directory exists
+// Ensure upload directories exist
 if (!existsSync(uploadDir)) {
   mkdirSync(uploadDir, { recursive: true });
   console.log('📁 Created upload directory:', uploadDir);
+}
+
+if (!existsSync(imageUploadDir)) {
+  mkdirSync(imageUploadDir, { recursive: true });
+  console.log('📁 Created image upload directory:', imageUploadDir);
 }
 
 // Multer configuration for file uploads
@@ -73,6 +79,35 @@ const upload = multer({
       cb(null, true);
     } else {
       cb(new Error('Only PDF files are allowed'), false);
+    }
+  }
+});
+
+// Image upload configuration
+const imageStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, imageUploadDir);
+  },
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 15);
+    const extension = extname(file.originalname);
+    const filename = `${timestamp}_${randomString}${extension}`;
+    cb(null, filename);
+  }
+});
+
+const imageUpload = multer({
+  storage: imageStorage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files (JPEG, PNG, GIF, WebP) are allowed'), false);
     }
   }
 });
@@ -105,14 +140,39 @@ const writeDB = (data) => {
 
 // ===== FILE ROUTES =====
 
+// Static files serving
+app.use('/uploads/images', express.static(imageUploadDir));
+app.use('/uploads/certificates', express.static(uploadDir));
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
     message: 'File server is running',
     uploadDir: uploadDir,
+    imageUploadDir: imageUploadDir,
     timestamp: new Date().toISOString()
   });
+});
+
+// Upload image for news
+app.post('/upload-image', imageUpload.single('image'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image uploaded' });
+    }
+
+    res.json({
+      success: true,
+      filename: req.file.filename,
+      originalName: req.file.originalname,
+      size: req.file.size,
+      url: `/uploads/images/${req.file.filename}`
+    });
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
 });
 
 // Upload certificate
