@@ -15,6 +15,7 @@ import { apiService } from '../../services/apiService';            // Import API
 import { ApplicationService } from '../../services/ApplicationService';
 import { usePendingApplications } from '../../context/PendingApplicationsContext';
 import ApplicationManager from '../../componen/ApplicationManager/ApplicationManager'; // Komponen untuk manage aplikasi
+import BeasiswaManager from '../../componen/ApplicationManager/BeasiswaManager'; // Komponen untuk manage beasiswa
 import NewsManager from '../../componen/NewsManager';
 import './AdminDashboard.css';
 
@@ -26,7 +27,7 @@ const AdminDashboard = () => {
     window.clearTimeout(showToast._t);
     showToast._t = window.setTimeout(() => setToast(t => ({ ...t, visible: false })), duration);
   };
-  const { pendingCount, setPendingCount, refresh: refreshPending } = usePendingApplications();
+  const { pendingCount } = usePendingApplications();
   // Hook untuk navigasi programmatic (redirect ke login jika tidak authorized)
   const navigate = useNavigate();
   
@@ -74,7 +75,6 @@ const AdminDashboard = () => {
   const fetchUsers = useCallback(async () => {
     try {
       setIsLoadingUsers(true);
-      console.log('🔄 Mengambil data pengguna dari Express.js API...');
       
       // Ensure apiService is initialized
       await apiService.init();
@@ -86,7 +86,6 @@ const AdminDashboard = () => {
       }
       
       const userData = await response.json();
-      console.log('✅ Users fetched:', userData.length, 'users');
       
       // Transform data to include additional fields for display
       const transformedUsers = userData.map(user => ({
@@ -103,7 +102,6 @@ const AdminDashboard = () => {
       console.error('❌ Error fetching users:', error);
       
       // Fallback to mock data if server fails
-      console.log('⚠️ Using fallback mock data');
       setUsers([
         {
           id: '1',
@@ -127,10 +125,10 @@ const AdminDashboard = () => {
     }
   }, []); // useCallback dependency array
 
-  // Load users on component mount
+  // Load users on component mount ONCE
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+  }, []); // Remove fetchUsers from dependency to prevent infinite loops
 
   // Ensure we don't stick to local fallback for applications when API is available
   useEffect(() => {
@@ -138,9 +136,15 @@ const AdminDashboard = () => {
       try {
         await apiService.init();
         if (apiService.isServerAvailable) {
-          try { localStorage.removeItem('applications_mode'); } catch {}
+          try { 
+            localStorage.removeItem('applications_mode'); 
+          } catch (_err) {
+            // Ignore error if localStorage is not available
+          }
         }
-      } catch {}
+      } catch (_err) {
+        // Ignore API init error
+      }
     })();
   }, []);
 
@@ -234,7 +238,7 @@ const AdminDashboard = () => {
   };
 
   // Handler untuk perubahan input di form edit user
-  const handleEditUserChange = (e) => {
+  const _handleEditUserChange = (e) => {
     const { name, value } = e.target;
     setEditingUser(prev => ({
       ...prev,                    // Spread existing editing user data
@@ -1244,7 +1248,13 @@ const AdminDashboard = () => {
             className={`nav-item ${activeTab === 'news' ? 'active' : ''}`}
             onClick={() => setActiveTab('news')}
           >
-            News
+            📰 News
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'beasiswa' ? 'active' : ''}`}
+            onClick={() => setActiveTab('beasiswa')}
+          >
+            🎓 Beasiswa
           </button>
         </div>
       </nav>
@@ -1259,6 +1269,11 @@ const AdminDashboard = () => {
         {activeTab === 'news' && (
           <div className="card">
             <NewsManager />
+          </div>
+        )}
+        {activeTab === 'beasiswa' && (
+          <div className="card">
+            <BeasiswaManager />
           </div>
         )}
       </main>

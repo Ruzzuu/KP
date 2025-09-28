@@ -25,6 +25,7 @@ import AdminDashboard from "./pages/AdminDashboard/AdminDashboard"; // Dashboard
 import UserDashboard from "./pages/UserDashboard/UserDashboard";     // Dashboard user
 import SponsorPage from "./pages/SponsorPage/SponsorPage"; // Halaman khusus sponsor
 import Beasiswa from "./pages/Beasiswa/Beasiswa";         // Halaman informasi beasiswa
+import BeasiswaDetail from "./pages/Beasiswa/BeasiswaDetail"; // Halaman detail beasiswa
 import LayananDetail from "./pages/Layanan/LayananDetail"; // Halaman detail layanan
 
 import "./App.css";
@@ -116,8 +117,9 @@ const App = () => {
         <Route path="/anggota" element={<><Navbar /><Anggota /><Footer /></>} />
         <Route path="/berita" element={<><Navbar /><Berita /><Footer /></>} />
         <Route path="/layanan" element={<><Navbar /><Layanan /><Footer /></>} />
-  <Route path="/layanan/:id" element={<><Navbar /><LayananDetail /><Footer /></>} />
+        <Route path="/layanan/:id" element={<><Navbar /><LayananDetail /><Footer /></>} />
         <Route path="/beasiswa" element={<><Navbar /><Beasiswa /><Footer /></>} />
+        <Route path="/beasiswa/:id" element={<BeasiswaDetail />} />
         
         {/* ROUTES SISTEM - Authentication dan Dashboard */}
         {/* Halaman-halaman yang memerlukan interaksi khusus atau autentikasi */}

@@ -320,13 +320,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: all 0.3s ease;
+  /* ✅ REMOVED: Misleading transition and hover effects */
+  /* Cards should only have hover effects if they're interactive as a whole */
 }
 
-.certificate-card-preview:hover {
-  transform: translateX(5px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
+/* ❌ REMOVED: Non-functional hover effect that misleads users */
+/* .certificate-card-preview:hover - This suggested the card was clickable when it's not */
 
 .certificate-info h3 {
   color: var(--primary-green);
@@ -359,20 +358,39 @@
 }
 
 .download-btn-small {
-  padding: 0.75rem 1.5rem;
+  padding: 10px 16px;
   background: var(--primary-green);
   color: var(--white);
   border: none;
-  border-radius: 8px;
-  font-size: 0.9rem;
+  border-radius: 6px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  
+  /*  CONSISTENT STYLING: Match button pattern */
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
 }
 
-.download-btn-small:hover {
+.download-btn-small:hover:not(.disabled) {
   background: var(--medium-green);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(15, 117, 54, 0.2);
+}
+
+.download-btn-small.disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.download-btn-small.disabled:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 .view-all-btn {
@@ -420,6 +438,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: 2rem;
+  /*  CONSISTENT GRID HEIGHT: Ensure all cards in same row have equal height */
+  align-items: stretch;
 }
 
 .certificate-card {
@@ -428,13 +448,16 @@
   box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
   border: 1px solid var(--border);
   overflow: hidden;
-  transition: all 0.3s ease;
+  
+  /* CONSISTENT CARD LAYOUT: Apply flexbox for button alignment */
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Allow card to stretch to full grid height */
 }
 
-.certificate-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-}
+/* ❌ REMOVED: Misleading hover effect on non-clickable card */
+/* .certificate-card:hover - This suggested the entire card was interactive */
+/* Only the download button should have hover effects */
 
 .certificate-badge {
   padding: 1rem 1.5rem;
@@ -453,6 +476,10 @@
 
 .certificate-content {
   padding: 1.5rem;
+  /*  FLEXIBLE CONTENT: Allow content area to grow and fill available space */
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .certificate-content h3 {
@@ -471,6 +498,9 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  /*  FLEXIBLE DETAILS: Allow details section to grow */
+  flex-grow: 1;
+  margin-top: auto; /* Push details to bottom of content area */
 }
 
 .detail-item {
@@ -494,24 +524,43 @@
   padding: 1.5rem;
   border-top: 1px solid var(--border);
   background: var(--light-gray);
+  
+  /* CONSISTENT STYLING: Match beasiswa-card pattern */
+  display: flex;
+  gap: 12px;
+  margin-top: auto; /* Push to bottom if in flex container */
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
 .download-btn {
-  width: 100%;
-  padding: 1rem;
+  flex: 1; /* Allow button to grow in flex container */
+  padding: 12px 16px;
   background: linear-gradient(135deg, var(--primary-green), var(--medium-green));
   color: var(--white);
   border: none;
-  border-radius: 10px;
-  font-size: 1rem;
+  border-radius: 8px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  
+  /* CONSISTENT STYLING: Match other button patterns */
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.download-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(15, 117, 54, 0.3);
+.download-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--medium-green), var(--primary-green));
+  transform: translateY(-1px); /* Subtle lift effect */
+  box-shadow: 0 4px 12px rgba(15, 117, 54, 0.25);
+}
+
+.download-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* Profile Content */

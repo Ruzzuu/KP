@@ -1,7 +1,7 @@
 // ApplicationManager Component - Komponen untuk mengelola aplikasi pendaftaran
 // Digunakan di AdminDashboard untuk review, approve, dan reject pendaftaran
 import React, { useState, useEffect, useRef } from 'react';
-import { emailService } from '../../services/EmailService';  // Service untuk mengirim email notifikasi
+// import { emailService } from '../../services/EmailService';  // Service untuk mengirim email notifikasi (unused for now)
 import { ApplicationService } from '../../services/ApplicationService';
 import './ApplicationManager.css';
 import { usePendingApplications } from '../../context/PendingApplicationsContext';
@@ -34,7 +34,7 @@ const ApplicationManager = ({ onPendingCountChange, onUsersChanged }) => {
   // Ref untuk memaksa styling hijau
   const greenNumberRef = useRef(null);
 
-  // Effect untuk memaksa warna hijau dengan JavaScript - OPTIMIZED VERSION
+  // Effect untuk memaksa warna hijau dengan JavaScript - FIXED VERSION
   useEffect(() => {
     const forceGreenStyling = () => {
       if (greenNumberRef.current) {
@@ -50,22 +50,18 @@ const ApplicationManager = ({ onPendingCountChange, onUsersChanged }) => {
         greenNumberRef.current.style.fontWeight = '700';
         greenNumberRef.current.setAttribute('data-forced-green', 'true');
         
-        // Single success log
-        console.log('✅ GREEN COLOR APPLIED TO PENDING COUNT - SUCCESS!');
         return true; // Signal success
       }
       return false;
     };
 
-    // Apply immediately when component mounts
+    // Apply immediately when component mounts and when applications count changes
     forceGreenStyling();
-    
-    // Clean implementation - no continuous polling needed since styling is working
     
     return () => {
       // Cleanup if needed
     };
-  }, [applications]);
+  }, [applications.length]); // Only re-run when applications count changes, not the whole array
 
   // Effect untuk fetch aplikasi saat component mount
   useEffect(() => {
@@ -107,7 +103,9 @@ const ApplicationManager = ({ onPendingCountChange, onUsersChanged }) => {
       setApplications(prev => prev.map(app => app.id === application.id ? { ...app, ...updatedApp } : app));
 
   // Notify parent to refresh users if needed
-  try { if (typeof onUsersChanged === 'function') onUsersChanged(); } catch {}
+  try { if (typeof onUsersChanged === 'function') onUsersChanged(); } catch (notificationError) {
+    console.warn('Failed to notify parent of user changes:', notificationError);
+  }
 
   // User feedback with final username
       const finalUser = user || { username: updatedApp?.username || creds.username };
@@ -205,7 +203,7 @@ const ApplicationManager = ({ onPendingCountChange, onUsersChanged }) => {
         setPendingCount(next);
       }
     }
-  }, [pendingApplications.length, onPendingCountChange]);
+  }, [pendingApplications.length, onPendingCountChange, setPendingCount]);
 
   // Delete processed application from history
   const handleDelete = async (id) => {

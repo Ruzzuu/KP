@@ -35,8 +35,8 @@ const SidebarWidget = ({
         });
         
         console.log('🧹 Cleared old cache data for fresh load');
-      } catch (error) {
-        console.warn('Could not clear cache:', error);
+      } catch (_error) {
+        console.warn('Could not clear cache:', _error);
       }
     };
     
@@ -69,7 +69,7 @@ const SidebarWidget = ({
         month: 'short',
         year: 'numeric'
       });
-    } catch (error) {
+    } catch (_error) {
       return 'Tanggal tidak valid';
     }
   };
@@ -277,7 +277,7 @@ const SidebarWidget = ({
           </div>
         ) : (
           <div className="related-news scrollable">
-            {newsData.map((news, index) => (
+            {newsData.map((news, _index) => (
               <div 
                 key={news.id} 
                 className="related-item enhanced"

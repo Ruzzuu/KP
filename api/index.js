@@ -7,7 +7,7 @@
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -31,7 +31,8 @@ const broadcastToClients = (event, data) => {
     try {
       client.write(message);
     } catch (error) {
-      // Remove dead connections
+      // Remove dead connections - log error for debugging
+      console.error('SSE client write error:', error.message);
       sseClients.delete(client);
     }
   });
@@ -52,7 +53,9 @@ const corsOptions = {
         'https://your-frontend-domain.vercel.app'
       ]);
       if (allowList.has(origin)) return callback(null, true);
-    } catch {}
+    } catch (error) {
+      console.error('Invalid origin URL:', error.message);
+    }
     return callback(null, false);
   },
   credentials: true
@@ -152,48 +155,90 @@ app.get('/api/news/:id', (req, res) => {
 
 // POST /api/news - Create new news
 app.post('/api/news', (req, res) => {
-  const db = readDB();
-  const newNews = {
-    id: Date.now().toString(),
-    title: req.body.title,
-    content: req.body.content,
-    image: req.body.image,
-    featured: req.body.featured || false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
-  
-  db.news.push(newNews);
-  if (writeDB(db)) {
-    broadcastToClients('news-added', newNews);
-    res.status(201).json(newNews);
-  } else {
-    res.status(500).json({ error: 'Failed to save news' });
+  try {
+    const db = readDB();
+    
+    // Get image path from request body (uploaded via file-server)
+    const imagePath = req.body.image || null;
+    
+    const newNews = {
+      id: Date.now().toString(),
+      title: req.body.title,
+      content: req.body.content,
+      author: req.body.author || '',
+      category: req.body.category || 'general',
+      image: imagePath,
+      featured: req.body.featured || false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    console.log('📰 Creating new news:', {
+      title: newNews.title,
+      hasImage: !!imagePath,
+      imagePath: imagePath
+    });
+    
+    db.news.push(newNews);
+    if (writeDB(db)) {
+      broadcastToClients('news-added', newNews);
+      res.status(201).json(newNews);
+    } else {
+      res.status(500).json({ error: 'Failed to save news' });
+    }
+  } catch (error) {
+    console.error('Error creating news:', error);
+    res.status(500).json({ error: 'Failed to create news: ' + error.message });
   }
 });
 
 // PUT /api/news/:id - Update news
 app.put('/api/news/:id', (req, res) => {
-  const db = readDB();
-  const newsIndex = db.news.findIndex(n => n.id === req.params.id);
-  
-  if (newsIndex === -1) {
-    return res.status(404).json({ error: 'News not found' });
-  }
-  
-  const updatedNews = {
-    ...db.news[newsIndex],
-    ...req.body,
-    updatedAt: new Date().toISOString()
-  };
-  
-  db.news[newsIndex] = updatedNews;
-  
-  if (writeDB(db)) {
-    broadcastToClients('news-updated', updatedNews);
-    res.json(updatedNews);
-  } else {
-    res.status(500).json({ error: 'Failed to update news' });
+  try {
+    const db = readDB();
+    const newsIndex = db.news.findIndex(n => n.id === req.params.id);
+    
+    if (newsIndex === -1) {
+      return res.status(404).json({ error: 'News not found' });
+    }
+    
+    // Get image path from request body (uploaded via file-server) or keep existing
+    let imagePath = db.news[newsIndex].image; // Keep existing image by default
+    
+    if (req.body.image !== undefined) {
+      // Image field provided in JSON (could be null to remove image, or filename from file-server)
+      imagePath = req.body.image;
+    }
+    
+    const updatedNews = {
+      ...db.news[newsIndex],
+      title: req.body.title || db.news[newsIndex].title,
+      content: req.body.content || db.news[newsIndex].content,
+      author: req.body.author !== undefined ? req.body.author : db.news[newsIndex].author,
+      category: req.body.category || db.news[newsIndex].category,
+      image: imagePath,
+      featured: req.body.featured !== undefined ? req.body.featured : db.news[newsIndex].featured,
+      updatedAt: new Date().toISOString()
+    };
+    
+    console.log('📰 Updating news:', {
+      id: req.params.id,
+      title: updatedNews.title,
+      hasNewImage: !!req.file,
+      imagePath: imagePath
+    });
+    
+    db.news[newsIndex] = updatedNews;
+    
+    if (writeDB(db)) {
+      broadcastToClients('news-updated', updatedNews);
+      res.json(updatedNews);
+    } else {
+      res.status(500).json({ error: 'Failed to update news' });
+    }
+  } catch (error) {
+    console.error('Error updating news:', error);
+    res.status(500).json({ error: 'Failed to update news: ' + error.message });
   }
 });
 
@@ -274,7 +319,7 @@ app.post('/api/register', async (req, res) => {
   db.users.push(newUser);
   
   if (writeDB(db)) {
-    const { password, ...userWithoutPassword } = newUser;
+    const { password: _, ...userWithoutPassword } = newUser;
     res.status(201).json(userWithoutPassword);
   } else {
     res.status(500).json({ error: 'Failed to create user' });
@@ -309,7 +354,7 @@ app.post('/api/login', async (req, res) => {
   db.sessions.push(session);
   writeDB(db);
   
-  const { password: _, ...userWithoutPassword } = user;
+  const { password: _pwd, ...userWithoutPassword } = user;
   res.json({ user: userWithoutPassword, sessionId });
 });
 
@@ -355,7 +400,7 @@ app.post('/api/auth/login', async (req, res) => {
   db.sessions.push(session);
   writeDB(db);
   
-  const { password: _, ...userWithoutPassword } = user;
+  const { password: _pwd, ...userWithoutPassword } = user;
   res.json({ 
     success: true,
     user: userWithoutPassword, 
@@ -398,7 +443,7 @@ app.post('/api/auth/register', async (req, res) => {
   const success = writeDB(db);
   
   if (success) {
-    const { password: _, ...userWithoutPassword } = newUser;
+    const { password: _pwd, ...userWithoutPassword } = newUser;
     res.status(201).json({
       success: true,
       user: userWithoutPassword,
@@ -406,6 +451,253 @@ app.post('/api/auth/register', async (req, res) => {
     });
   } else {
     res.status(500).json({ error: 'Failed to create user' });
+  }
+});
+
+// ===== BEASISWA ENDPOINTS =====
+// Function untuk menghitung status otomatis berdasarkan tanggal
+const calculateBeasiswaStatus = (tanggal_mulai, deadline) => {
+  const now = new Date();
+  const startDate = new Date(tanggal_mulai);
+  const endDate = new Date(deadline);
+  
+  if (now < startDate) {
+    return 'Segera'; // Belum dimulai
+  } else if (now >= startDate && now <= endDate) {
+    return 'Buka'; // Sedang berlangsung
+  } else {
+    return 'Tutup'; // Sudah berakhir
+  }
+};
+
+// GET /api/beasiswa - Get all beasiswa with auto-calculated status
+app.get('/api/beasiswa', (req, res) => {
+  const db = readDB();
+  
+  // Update status otomatis untuk semua beasiswa
+  const beasiswaWithStatus = (db.beasiswa || []).map(beasiswa => ({
+    ...beasiswa,
+    status: calculateBeasiswaStatus(beasiswa.tanggal_mulai, beasiswa.deadline)
+  }));
+  
+  console.log('🎓 Returning', beasiswaWithStatus.length, 'beasiswa items');
+  res.json(beasiswaWithStatus);
+});
+
+// GET /api/beasiswa/:id - Get beasiswa by ID with auto-calculated status
+app.get('/api/beasiswa/:id', (req, res) => {
+  const db = readDB();
+  const beasiswa = (db.beasiswa || []).find(b => b.id === req.params.id);
+  
+  if (!beasiswa) {
+    return res.status(404).json({ error: 'Beasiswa not found' });
+  }
+  
+  // Update status otomatis
+  const beasiswaWithStatus = {
+    ...beasiswa,
+    status: calculateBeasiswaStatus(beasiswa.tanggal_mulai, beasiswa.deadline)
+  };
+  
+  res.json(beasiswaWithStatus);
+});
+
+// POST /api/beasiswa - Create new beasiswa
+app.post('/api/beasiswa', (req, res) => {
+  const db = readDB();
+  
+  // Validate required fields
+  const requiredFields = ['judul', 'nominal', 'deadline', 'tanggal_mulai', 'deskripsi', 'persyaratan', 'kategori'];
+  for (const field of requiredFields) {
+    if (!req.body[field]) {
+      return res.status(400).json({ error: `Field ${field} is required` });
+    }
+  }
+  
+  const newBeasiswa = {
+    id: Date.now().toString(),
+    judul: req.body.judul,
+    nominal: req.body.nominal,
+    deadline: req.body.deadline,
+    tanggal_mulai: req.body.tanggal_mulai,
+    status: calculateBeasiswaStatus(req.body.tanggal_mulai, req.body.deadline), // Auto-calculate
+    deskripsi: req.body.deskripsi,
+    persyaratan: Array.isArray(req.body.persyaratan) ? req.body.persyaratan : [req.body.persyaratan],
+    kategori: req.body.kategori,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  
+  // Initialize beasiswa array if not exists
+  if (!db.beasiswa) {
+    db.beasiswa = [];
+  }
+  
+  db.beasiswa.push(newBeasiswa);
+  
+  if (writeDB(db)) {
+    broadcastToClients('beasiswa-added', newBeasiswa);
+    res.status(201).json(newBeasiswa);
+  } else {
+    res.status(500).json({ error: 'Failed to save beasiswa' });
+  }
+});
+
+// PUT /api/beasiswa/:id - Update beasiswa
+app.put('/api/beasiswa/:id', (req, res) => {
+  const db = readDB();
+  const beasiswaIndex = (db.beasiswa || []).findIndex(b => b.id === req.params.id);
+  
+  if (beasiswaIndex === -1) {
+    return res.status(404).json({ error: 'Beasiswa not found' });
+  }
+  
+  const updatedBeasiswa = {
+    ...db.beasiswa[beasiswaIndex],
+    ...req.body,
+    // Auto-calculate status jika tanggal diubah
+    status: calculateBeasiswaStatus(
+      req.body.tanggal_mulai || db.beasiswa[beasiswaIndex].tanggal_mulai,
+      req.body.deadline || db.beasiswa[beasiswaIndex].deadline
+    ),
+    updatedAt: new Date().toISOString()
+  };
+  
+  db.beasiswa[beasiswaIndex] = updatedBeasiswa;
+  
+  if (writeDB(db)) {
+    broadcastToClients('beasiswa-updated', updatedBeasiswa);
+    res.json(updatedBeasiswa);
+  } else {
+    res.status(500).json({ error: 'Failed to update beasiswa' });
+  }
+});
+
+// DELETE /api/beasiswa/:id - Delete beasiswa
+app.delete('/api/beasiswa/:id', (req, res) => {
+  const db = readDB();
+  const beasiswaIndex = (db.beasiswa || []).findIndex(b => b.id === req.params.id);
+  
+  if (beasiswaIndex === -1) {
+    return res.status(404).json({ error: 'Beasiswa not found' });
+  }
+  
+  const deletedBeasiswa = db.beasiswa[beasiswaIndex];
+  db.beasiswa.splice(beasiswaIndex, 1);
+  
+  if (writeDB(db)) {
+    broadcastToClients('beasiswa-deleted', { id: req.params.id });
+    res.status(204).send(); // No content response for successful deletion
+  } else {
+    res.status(500).json({ error: 'Failed to delete beasiswa' });
+  }
+});
+
+// GET /api/beasiswa/kategori/:kategori - Get beasiswa by kategori
+app.get('/api/beasiswa/kategori/:kategori', (req, res) => {
+  const db = readDB();
+  const kategori = req.params.kategori;
+  
+  let filteredBeasiswa = db.beasiswa || [];
+  
+  // Filter by kategori (case insensitive), kecuali "Semua Program"
+  if (kategori !== 'Semua Program') {
+    filteredBeasiswa = filteredBeasiswa.filter(b => 
+      b.kategori.toLowerCase() === kategori.toLowerCase()
+    );
+  }
+  
+  // Update status otomatis untuk semua hasil
+  const beasiswaWithStatus = filteredBeasiswa.map(beasiswa => ({
+    ...beasiswa,
+    status: calculateBeasiswaStatus(beasiswa.tanggal_mulai, beasiswa.deadline)
+  }));
+  
+  console.log('🎓 Returning', beasiswaWithStatus.length, 'beasiswa items for kategori:', kategori);
+  res.json(beasiswaWithStatus);
+});
+
+// ===== BEASISWA APPLICATION ENDPOINTS =====
+// POST /api/beasiswa-applications - Submit beasiswa application
+app.post('/api/beasiswa-applications', (req, res) => {
+  const db = readDB();
+  
+  // Validate required fields for beasiswa application
+  const requiredFields = ['beasiswaId', 'beasiswaTitle', 'fullName', 'email', 'phone'];
+  for (const field of requiredFields) {
+    if (!req.body[field]) {
+      return res.status(400).json({ error: `Field ${field} is required` });
+    }
+  }
+  
+  const newApplication = {
+    id: Date.now().toString(),
+    beasiswaId: req.body.beasiswaId,
+    beasiswaTitle: req.body.beasiswaTitle,
+    fullName: req.body.fullName,
+    email: req.body.email,
+    phone: req.body.phone,
+    education: req.body.education || '',
+    gpa: req.body.gpa || '',
+    motivation: req.body.motivation || '',
+    status: 'pending',
+    submittedAt: req.body.submittedAt || new Date().toISOString(),
+    processedAt: null,
+    notes: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  
+  // Initialize beasiswa_applications array if not exists
+  if (!db.beasiswa_applications) {
+    db.beasiswa_applications = [];
+  }
+  
+  db.beasiswa_applications.push(newApplication);
+  
+  if (writeDB(db)) {
+    broadcastToClients('beasiswa-application-added', newApplication);
+    res.status(201).json({
+      message: 'Pendaftaran beasiswa berhasil dikirim',
+      application: newApplication
+    });
+  } else {
+    res.status(500).json({ error: 'Failed to save beasiswa application' });
+  }
+});
+
+// GET /api/beasiswa-applications - Get all beasiswa applications (admin only)
+app.get('/api/beasiswa-applications', (req, res) => {
+  const db = readDB();
+  res.json(db.beasiswa_applications || []);
+});
+
+// GET /api/beasiswa-applications/user/:email - Get applications by user email
+app.get('/api/beasiswa-applications/user/:email', (req, res) => {
+  const db = readDB();
+  const userApplications = (db.beasiswa_applications || []).filter(app => app.email === req.params.email);
+  res.json(userApplications);
+});
+
+// PUT /api/beasiswa-applications/:id/status - Update application status
+app.put('/api/beasiswa-applications/:id/status', (req, res) => {
+  const db = readDB();
+  const appIndex = (db.beasiswa_applications || []).findIndex(app => app.id === req.params.id);
+  
+  if (appIndex === -1) {
+    return res.status(404).json({ error: 'Beasiswa application not found' });
+  }
+  
+  db.beasiswa_applications[appIndex].status = req.body.status;
+  db.beasiswa_applications[appIndex].processedAt = new Date().toISOString();
+  db.beasiswa_applications[appIndex].notes = req.body.notes || '';
+  db.beasiswa_applications[appIndex].updatedAt = new Date().toISOString();
+  
+  if (writeDB(db)) {
+    broadcastToClients('beasiswa-application-updated', db.beasiswa_applications[appIndex]);
+    res.json(db.beasiswa_applications[appIndex]);
+  } else {
+    res.status(500).json({ error: 'Failed to update beasiswa application status' });
   }
 });
 
@@ -465,6 +757,26 @@ app.put('/api/applications/:id/status', (req, res) => {
   }
 });
 
+// DELETE /api/applications/:id - Delete application (remove from history)
+app.delete('/api/applications/:id', (req, res) => {
+  const db = readDB();
+  const appIndex = db.applications.findIndex(app => app.id === req.params.id);
+  
+  if (appIndex === -1) {
+    return res.status(404).json({ error: 'Application not found' });
+  }
+  
+  // Remove application from array
+  db.applications.splice(appIndex, 1);
+  
+  if (writeDB(db)) {
+    console.log(`🗑️ Application ${req.params.id} deleted successfully`);
+    res.status(204).send(); // 204 No Content for successful deletion
+  } else {
+    res.status(500).json({ error: 'Failed to delete application' });
+  }
+});
+
 // ===== USER MANAGEMENT ENDPOINTS =====
 
 // GET /api/users - Get all users (for admin dashboard)
@@ -474,7 +786,7 @@ app.get('/api/users', (req, res) => {
   
   // Remove passwords from response
   const usersWithoutPasswords = db.users.map(user => {
-    const { password, ...userWithoutPassword } = user;
+    const { password: _pwd, ...userWithoutPassword } = user;
     return userWithoutPassword;
   });
   
@@ -491,7 +803,7 @@ app.get('/api/users/:id', (req, res) => {
   }
   
   // Remove password from response
-  const { password, ...userWithoutPassword } = user;
+  const { password: _pwd, ...userWithoutPassword } = user;
   res.json(userWithoutPassword);
 });
 
@@ -518,7 +830,7 @@ app.put('/api/users/:id', async (req, res) => {
   db.users[userIndex] = updatedUser;
   
   if (writeDB(db)) {
-    const { password, ...userWithoutPassword } = updatedUser;
+    const { password: _pwd, ...userWithoutPassword } = updatedUser;
     res.json(userWithoutPassword);
   } else {
     res.status(500).json({ error: 'Failed to update user' });
@@ -538,7 +850,7 @@ app.delete('/api/users/:id', (req, res) => {
   db.users.splice(userIndex, 1);
   
   if (writeDB(db)) {
-    const { password, ...userWithoutPassword } = deletedUser;
+    const { password: _pwd, ...userWithoutPassword } = deletedUser;
     res.json({ message: 'User deleted successfully', deletedUser: userWithoutPassword });
   } else {
     res.status(500).json({ error: 'Failed to delete user' });
@@ -550,7 +862,9 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'healthy', 
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    nodeVersion: process.version,
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 

@@ -67,7 +67,7 @@ const NewsDetailLayout = () => {
         month: 'long',
         year: 'numeric'
       });
-    } catch (error) {
+    } catch (_error) {
       return 'Tanggal tidak valid';
     }
   };
@@ -191,7 +191,8 @@ const NewsDetailLayout = () => {
     );
   }
 
-  const contentBlocks = parseContent(newsData.content);
+  // Process content for future enhanced formatting
+  const _contentBlocks = parseContent(newsData.content);
 
   return (
     <div className="news-detail-layout">
