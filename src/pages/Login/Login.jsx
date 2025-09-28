@@ -12,6 +12,7 @@ import "./Login.css";                                   // Styling untuk login p
 import { FaEye, FaEyeSlash } from "react-icons/fa";     // Icons untuk toggle password visibility
 import logo from "../../assets/logo.png";               // Logo PERGUNU untuk branding
 import { apiService } from '../../services/apiService'; // Core service untuk API communication
+import { validateLoginCredentials, checkRateLimit, resetRateLimit } from '../../utils/validation'; // Security utilities
 
 const Login = () => {
   // Hook untuk navigasi programmatic (redirect after login)
@@ -50,17 +51,38 @@ const Login = () => {
     setIsLoading(true);         // Show loading indicator untuk UX feedback
     setApiMessage('');          // Clear previous messages untuk clean UI
     
-    console.log('🔐 Starting login process...');
-    
     try {
-      // === STEP 1: API AUTHENTICATION ===
-      // Panggil API login dengan credentials yang diinput user
-      const result = await apiService.login({
-        username: loginData.username, // Username/email yang diinput
-        password: loginData.password  // Password yang akan diverifikasi
-      });
+      // === STEP 1: INPUT VALIDATION ===
+      // Validate dan sanitize credentials sebelum mengirim ke API
+      const validation = validateLoginCredentials(loginData);
+      
+      if (!validation.isValid) {
+        setApiMessage(`❌ ${validation.errors.join(', ')}`);
+        return;
+      }
+      
+      // === STEP 2: RATE LIMITING ===
+      // Check rate limiting untuk prevent brute force attacks
+      const userIdentifier = validation.sanitizedData.username;
+      const rateLimitCheck = checkRateLimit(`login_${userIdentifier}`, 5, 900000); // 5 attempts per 15 minutes
+      
+      if (!rateLimitCheck.allowed) {
+        setApiMessage(`❌ Too many login attempts. Please try again in ${rateLimitCheck.resetInMinutes} minutes.`);
+        return;
+      }
+      
+      console.log('🔐 Starting login process...');
+      console.log('ℹ️ Attempts remaining:', rateLimitCheck.attemptsRemaining);
+      
+      // === STEP 3: API AUTHENTICATION ===
+      // Panggil API login dengan sanitized credentials
+      const result = await apiService.login(validation.sanitizedData);
       
       console.log('✅ Login successful:', result.user);
+      
+      // === STEP 4: RESET RATE LIMIT ON SUCCESS ===
+      // Clear rate limit setelah login berhasil
+      resetRateLimit(`login_${userIdentifier}`);
       
       // === STEP 2: ROLE-BASED ROUTING ===
       // Cek role user untuk menentukan redirect destination

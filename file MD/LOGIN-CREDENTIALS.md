@@ -1,41 +1,34 @@
-# 🔐 LOGIN CREDENTIALS
+# 🔐 LOGIN SYSTEM GUIDE
 
-## 📋 **Akun Yang Tersedia**
+## 📋 **User Account Types**
 
 ### 👤 **ADMIN ACCOUNTS**
-1. **Admin Pergunu**
-   - Username: `admin`
-   - Password: `admin123`
+1. **Admin Users**
    - Role: admin
-   - Email: admin@pergunu.com
+   - Access: Full system administration
+   - Permissions: Manage users, content, applications
 
-2. **Fairuz**
-   - Username: `fairuz`
-   - Password: `fairuz123`
-   - Role: admin
-   - Email: fairuz.fuadi04@gmail.com
-
-### 👥 **USER ACCOUNTS**
-3. **akun1**
-   - Username: `akun1`
-   - Password: (gunakan password asli dari database)
+### 👥 **REGULAR USER ACCOUNTS**
+2. **Standard Users**
    - Role: user
+   - Access: User dashboard, applications
+   - Permissions: View content, submit applications
 
-4. **Muhammad Rizky Fajar Nugraha**
-   - Username: `muhammad rizky fajar nugraha`
-   - Password: (gunakan password asli dari database)
-   - Role: user
+## 🔑 **Authentication Method**
+- Users can login with either **username** or **email**
+- Passwords are securely hashed using bcrypt
+- Rate limiting prevents brute force attacks
+- Sessions are managed securely
 
-5. **Adi Pratama**
-   - Username: `adi`
-   - Password: (gunakan password asli dari database)
-   - Role: user
-   - Note: User ini memiliki certificates
+## 🛡️ **Security Features**
+- Input validation and sanitization
+- Rate limiting (5 attempts per 15 minutes)
+- Secure session management
+- Password strength requirements
+- CORS protection
 
-6. **akbar maulana**
-   - Username: `akbar`
-   - Password: `akbar123`
-   - Role: user
+**⚠️ SECURITY NOTE:** 
+Default credentials should be changed immediately in production environments. Contact system administrator for access credentials.
 
 ## 🚀 **Cara Login**
 

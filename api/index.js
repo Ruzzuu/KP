@@ -39,26 +39,53 @@ const broadcastToClients = (event, data) => {
 };
 
 // ===== MIDDLEWARE =====
-// Flexible CORS: allow localhost/127.0.0.1 on any port in development
+// Secure CORS configuration with environment-based origins
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, or same-origin)
+    // Get allowed origins from environment
+    const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean);
+    
+    // Allow same-origin requests (no origin header)
     if (!origin) return callback(null, true);
+    
     try {
       const url = new URL(origin);
-      const isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
-      if (isLocalhost) return callback(null, true);
-      // Allow specific production origins here if needed
+      
+      // In development, allow localhost origins
+      if (process.env.NODE_ENV !== 'production') {
+        const isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+        if (isLocalhost) return callback(null, true);
+      }
+      
+      // Check against whitelist of allowed origins
       const allowList = new Set([
-        'https://your-frontend-domain.vercel.app'
-      ]);
-      if (allowList.has(origin)) return callback(null, true);
+        ...allowedOrigins,
+        process.env.FRONTEND_URL,
+        'https://your-frontend-domain.vercel.app' // Replace with actual domain
+      ].filter(Boolean));
+      
+      if (allowList.has(origin)) {
+        return callback(null, true);
+      }
+      
+      // Log rejected origins in development for debugging
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(`CORS: Rejected origin ${origin}`);
+      }
+      
     } catch (error) {
-      console.error('Invalid origin URL:', error.message);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Invalid origin URL:', error.message);
+      }
     }
-    return callback(null, false);
+    
+    return callback(new Error('Not allowed by CORS'), false);
   },
-  credentials: true
+  credentials: true,
+  optionsSuccessStatus: 200, // Support legacy browsers
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  maxAge: 86400 // Cache preflight for 24 hours
 };
 app.use(cors(corsOptions));
 

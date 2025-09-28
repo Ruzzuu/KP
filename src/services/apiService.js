@@ -17,16 +17,36 @@ class ApiService {
   constructor() {
     // Konfigurasi service dengan Express.js backend
     this.USE_JSON_SERVER = false;                   // Using Express.js instead of json-server
-    this.API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';     // Express.js API endpoint
-    this.FILE_SERVER_URL = import.meta.env.VITE_FILE_SERVER_URL || 'http://localhost:3002'; // File server endpoint
-  this.initialized = false;                       // Initialization status
-  this._initializingPromise = null;               // Promise to guard concurrent init
+    
+    // Environment-based configuration with secure defaults
+    const isDevelopment = import.meta.env.DEV || false;
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+    const fileServerUrl = import.meta.env.VITE_FILE_SERVER_URL;
+    
+    // Only use localhost in development mode with explicit environment variables
+    if (isDevelopment && !apiBaseUrl) {
+      this.API_URL = 'http://localhost:3001/api';
+    } else {
+      this.API_URL = apiBaseUrl || '/api'; // Relative URL for production
+    }
+    
+    if (isDevelopment && !fileServerUrl) {
+      this.FILE_SERVER_URL = 'http://localhost:3002';
+    } else {
+      this.FILE_SERVER_URL = fileServerUrl || '/files'; // Relative URL for production
+    }
+    
+    this.initialized = false;                       // Initialization status
+    this._initializingPromise = null;               // Promise to guard concurrent init
     this.isServerAvailable = false;                 // Server availability status
     this.retryCount = 3;                           // Retry attempts untuk failed requests
     this.timeout = 10000;                          // Request timeout (10 seconds)
-    this.version = '2.0.0-fix-' + Date.now();      // Force cache refresh
+    this.version = '2.0.0-secure-' + Date.now();      // Force cache refresh
     
-    console.log('🆕 NEW ApiService version:', this.version);
+    // Only log version in development
+    if (isDevelopment) {
+      console.log('🆕 ApiService version:', this.version);
+    }
     
     // Security configuration dari environment variables
     this.saltRounds = parseInt(import.meta.env.VITE_BCRYPT_SALT_ROUNDS) || 12;
@@ -74,14 +94,15 @@ class ApiService {
       return;
     }
     
-    console.log('🔧 Initializing ApiService...');
-    console.log('🌐 API_URL:', this.API_URL); // DEBUG: Print API URL
-    console.log('🔍 EXPECTED URL should contain /api path'); // DEBUG
+    const isDevelopment = import.meta.env.DEV || false;
+    
+    if (isDevelopment) {
+      console.log('🔧 Initializing ApiService...');
+    }
     
     // Health check untuk Express.js API availability
     this._initializingPromise = (async () => {
       try {
-      console.log('🔍 Health check URL:', `${this.API_URL}/health`); // DEBUG: Print full URL
       const response = await fetch(`${this.API_URL}/health`, {
         method: 'GET',
         timeout: 2000 // Timeout 2 detik
@@ -90,17 +111,23 @@ class ApiService {
       if (response.ok) {
         this.USE_JSON_SERVER = true;
         this.isServerAvailable = true;
-        console.log('✅ API Service diinisialisasi dalam mode Express.js API');
+        if (isDevelopment) {
+          console.log('✅ API Service diinisialisasi dalam mode Express.js API');
+        }
       } else {
         this.USE_JSON_SERVER = false;
         this.isServerAvailable = false;
-        console.log('⚠️ API Service diinisialisasi dalam mode localStorage');
+        if (isDevelopment) {
+          console.log('⚠️ API Service diinisialisasi dalam mode localStorage');
+        }
       }
     } catch (error) {
       this.USE_JSON_SERVER = false;
       this.isServerAvailable = false;
-      console.log('⚠️ API Service diinisialisasi dalam mode localStorage (Express.js API tidak ditemukan)');
-      console.error('❌ Health check error:', error);
+      if (isDevelopment) {
+        console.log('⚠️ API Service diinisialisasi dalam mode localStorage (Express.js API tidak ditemukan)');
+        console.error('❌ Health check error:', error);
+      }
   } finally {
       this.initialized = true;
       this._initializingPromise = null;
@@ -206,8 +233,11 @@ class ApiService {
   // Login implementation untuk Express.js backend
   async loginWithServer(credentials) {
     try {
-      console.log('🔄 Attempting login with Express.js API...');
-      console.log('🌐 API URL:', this.API_URL);
+      const isDevelopment = import.meta.env.DEV || false;
+      
+      if (isDevelopment) {
+        console.log('🔄 Attempting login with Express.js API...');
+      }
       
       // === LOGIN WITH EXPRESS.JS API ===
       const response = await fetch(`${this.API_URL}/auth/login`, {
@@ -222,16 +252,17 @@ class ApiService {
         })
       });
       
-      console.log('📡 Response status:', response.status, response.statusText);
-      
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
       }
       
       const result = await response.json();
-      console.log('✅ Login successful:', result.message);
-      console.log('👤 User:', result.user.username, '(', result.user.role, ')');
+      
+      if (isDevelopment) {
+        console.log('✅ Login successful:', result.message);
+        console.log('👤 User role:', result.user.role);
+      }
       
       // Store user session
       const userSession = {
@@ -249,8 +280,11 @@ class ApiService {
         message: result.message
       };
     } catch (error) {
-      console.error('❌ JSON Server login error:', error.message);
-      console.error('📝 Full error details:', error);
+      const isDevelopment = import.meta.env.DEV || false;
+      
+      if (isDevelopment) {
+        console.error('❌ Login error:', error.message);
+      }
       
       // === SMART FALLBACK STRATEGY ===
       // HANYA switch ke localStorage jika ada SERVER ERROR
@@ -259,11 +293,15 @@ class ApiService {
           error.message.includes('401') ||
           error.message.includes('Unauthorized')) {
         // Authentication error - TETAP gunakan Express.js, jangan switch!
-        console.log('🔐 Authentication failed, but keeping Express.js mode');
+        if (isDevelopment) {
+          console.log('🔐 Authentication failed, but keeping Express.js mode');
+        }
         throw error; // Re-throw authentication error
       } else {
         // Server error - baru switch ke localStorage
-        console.warn('⚠️ Server error detected, switching to localStorage mode...');
+        if (isDevelopment) {
+          console.warn('⚠️ Server error detected, switching to localStorage mode...');
+        }
         this.USE_JSON_SERVER = false;
         return this.loginWithLocalStorage(credentials);
       }
