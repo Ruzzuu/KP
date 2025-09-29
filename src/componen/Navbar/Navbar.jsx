@@ -77,56 +77,34 @@ const Navbar = () => {
         <nav className="navbar-right">
           <ul>
             <li>
-              {/* // Link ke homepage atau anchor section */}
-              {isHome ? (
-                <a href="#tentang">Tentang</a>
-              ) : (
-                <Link 
-                  to="/#tentang" 
-                  className={location.pathname === '/tentang' ? 'sponsor-active' : ''}
-                >
-                  Tentang
-                </Link>
-              )}
+              {/* Home - Link to homepage */}
+              <Link 
+                to="/"
+                className={location.pathname === '/' ? 'sponsor-active' : ''}
+              >
+                Home
+              </Link>
             </li>
             <li>
-              {/* // Link ke homepage atau anchor section */}
-              {isHome ? (
-                <a href="#anggota">Anggota</a>
-              ) : (
-                <Link 
-                  to="/#anggota"
-                  className={location.pathname === '/anggota' ? 'sponsor-active' : ''}
-                >
-                  Anggota
-                </Link>
-              )}
+              {/* Berita - Always link to /berita page */}
+              <Link 
+                to="/berita"
+                className={location.pathname === '/berita' ? 'sponsor-active' : ''}
+              >
+                Berita
+              </Link>
             </li>
             <li>
-              {isHome ? (
-                <a href="#berita">Berita</a>
-              ) : (
-                <Link 
-                  to="/#berita"
-                  className={location.pathname === '/berita' ? 'sponsor-active' : ''}
-                >
-                  Berita
-                </Link>
-              )}
+              {/* Beasiswa - Always link to /beasiswa page */}
+              <Link 
+                to="/beasiswa"
+                className={location.pathname === '/beasiswa' ? 'sponsor-active' : ''}
+              >
+                Beasiswa
+              </Link>
             </li>
             <li>
-              {isHome ? (
-                <a href="#beasiswa">Beasiswa</a>
-              ) : (
-                <Link 
-                  to="/#beasiswa"
-                  className={location.pathname === '/beasiswa' ? 'sponsor-active' : ''}
-                >
-                  Beasiswa
-                </Link>
-              )}
-            </li>
-            <li>
+              {/* Layanan - Link to services section or page */}
               {isHome ? (
                 <a href="#layanan">Layanan</a>
               ) : (
@@ -138,8 +116,8 @@ const Navbar = () => {
                 </Link>
               )}
             </li>
-            
             <li>
+              {/* Sponsor - Link to sponsor section or page */}
               {isHome ? (
                 <a href="#sponsor">Sponsor</a>
               ) : (
@@ -152,6 +130,7 @@ const Navbar = () => {
               )}
             </li>
             <li>
+              {/* Hubungi Kami - Link to contact section */}
               {isHome ? (
                 <a href="#hubungi">Hubungi Kami</a>
               ) : (
