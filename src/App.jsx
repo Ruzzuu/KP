@@ -24,7 +24,7 @@ import RegisterForm from "./pages/RegisterForm/RegisterForm"; // Form pendaftara
 import AdminDashboard from "./pages/AdminDashboard/AdminDashboard"; // Dashboard admin
 import UserDashboard from "./pages/UserDashboard/UserDashboard";     // Dashboard user
 import SponsorPage from "./pages/SponsorPage/SponsorPage"; // Halaman khusus sponsor
-import Beasiswa from "./pages/Beasiswa/Beasiswa";         // Halaman informasi beasiswa
+import Beasiswa from "./pages/Beasiswa/beasiswa_page";         // Halaman informasi beasiswa
 import BeasiswaDetail from "./pages/Beasiswa/BeasiswaDetail"; // Halaman detail beasiswa
 import LayananDetail from "./pages/Layanan/LayananDetail"; // Halaman detail layanan
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'; // Tambahkan useState dan us
 import { useNavigate } from 'react-router-dom'; // Tambahkan useNavigate untuk navigation
 import Navbar from "../../componen/Navbar/Navbar";
 import Footer from "../../componen/Footer/Footer";
-import './Beasiswa.css';
+import './beasiswa_page.css';
 
 const Beasiswa = () => {
   const navigate = useNavigate(); // Hook untuk navigation
