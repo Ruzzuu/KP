@@ -22,6 +22,9 @@ const Navbar = () => {
   
   // State untuk mobile menu toggle (reserved for future mobile menu implementation)
   const [_isMobileMenuOpen, _setIsMobileMenuOpen] = useState(false);
+  
+  // State untuk menyimpan active section berdasarkan scroll position
+  const [activeSection, setActiveSection] = useState('');
 
   // Effect untuk cek status login user saat component mount dan setiap render
   useEffect(() => {
@@ -48,6 +51,39 @@ const Navbar = () => {
       }
     }
   }, [location.pathname]); // Re-run when route changes
+
+  // Effect untuk mendeteksi active section berdasarkan scroll position
+  useEffect(() => {
+    // Hanya jalankan di homepage
+    if (location.pathname !== '/') return;
+
+    const handleScroll = () => {
+      const sections = ['berita', 'beasiswa', 'layanan', 'sponsor', 'hubungi'];
+      const scrollPosition = window.scrollY + 100; // Offset untuk navbar
+
+      for (const section of sections) {
+        const element = document.getElementById(section);
+        if (element) {
+          const offsetTop = element.offsetTop;
+          const offsetBottom = offsetTop + element.offsetHeight;
+          
+          if (scrollPosition >= offsetTop && scrollPosition < offsetBottom) {
+            setActiveSection(section);
+            break;
+          }
+        }
+      }
+    };
+
+    // Set initial active section
+    handleScroll();
+    
+    // Add scroll event listener
+    window.addEventListener('scroll', handleScroll);
+    
+    // Cleanup
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [location.pathname]);
 
   // Fungsi untuk handle logout dengan confirmation
   const handleLogout = () => {
@@ -89,7 +125,7 @@ const Navbar = () => {
               {/* Berita - Always link to /berita page */}
               <Link 
                 to="/berita"
-                className={location.pathname === '/berita' ? 'sponsor-active' : ''}
+                className={location.pathname === '/berita' || (isHome && activeSection === 'berita') ? 'sponsor-active' : ''}
               >
                 Berita
               </Link>
@@ -98,7 +134,7 @@ const Navbar = () => {
               {/* Beasiswa - Always link to /beasiswa page */}
               <Link 
                 to="/beasiswa"
-                className={location.pathname === '/beasiswa' ? 'sponsor-active' : ''}
+                className={location.pathname === '/beasiswa' || (isHome && activeSection === 'beasiswa') ? 'sponsor-active' : ''}
               >
                 Beasiswa
               </Link>
@@ -106,7 +142,12 @@ const Navbar = () => {
             <li>
               {/* Layanan - Link to services section or page */}
               {isHome ? (
-                <a href="#layanan">Layanan</a>
+                <a 
+                  href="#layanan"
+                  className={activeSection === 'layanan' ? 'sponsor-active' : ''}
+                >
+                  Layanan
+                </a>
               ) : (
                 <Link 
                   to="/#layanan"
@@ -119,7 +160,12 @@ const Navbar = () => {
             <li>
               {/* Sponsor - Link to sponsor section or page */}
               {isHome ? (
-                <a href="#sponsor">Sponsor</a>
+                <a 
+                  href="#sponsor"
+                  className={activeSection === 'sponsor' ? 'sponsor-active' : ''}
+                >
+                  Sponsor
+                </a>
               ) : (
                 <Link 
                   to="/#sponsor" 
@@ -132,9 +178,19 @@ const Navbar = () => {
             <li>
               {/* Hubungi Kami - Link to contact section */}
               {isHome ? (
-                <a href="#hubungi">Hubungi Kami</a>
+                <a 
+                  href="#hubungi"
+                  className={activeSection === 'hubungi' ? 'sponsor-active' : ''}
+                >
+                  Hubungi Kami
+                </a>
               ) : (
-                <Link to="/#hubungi">Hubungi Kami</Link>
+                <Link 
+                  to="/#hubungi"
+                  className={location.pathname === '/hubungi' ? 'sponsor-active' : ''}
+                >
+                  Hubungi Kami
+                </Link>
               )}
             </li>
             <li className="login-button-wrapper">
