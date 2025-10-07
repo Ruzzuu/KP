@@ -381,7 +381,33 @@ export default function NewsManager() {
       });
 
       if (response.ok) {
+        const updatedNews = await response.json();
         setSuccess(editingId ? 'Berita berhasil diupdate!' : 'Berita berhasil dibuat!');
+        
+        // Dispatch event untuk sinkronisasi gambar
+        if (uploadedImagePath) {
+          const fullImageUrl = uploadedImagePath.startsWith('http') 
+            ? uploadedImagePath 
+            : `http://localhost:3002/uploads/images/${uploadedImagePath}`;
+            
+          window.dispatchEvent(new CustomEvent('news-image-updated', {
+            detail: {
+              newsId: updatedNews.id || editingId,
+              imageUrl: fullImageUrl,
+              featured: updatedNews.featured || false
+            }
+          }));
+          
+          // Jika ini featured news, update featured image juga
+          if (updatedNews.featured) {
+            window.dispatchEvent(new CustomEvent('featured-news-changed', {
+              detail: {
+                imageUrl: fullImageUrl,
+                newsData: updatedNews
+              }
+            }));
+          }
+        }
         
         // Clean up blob URLs
         if (formData.image && formData.image.startsWith('blob:')) {

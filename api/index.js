@@ -84,7 +84,7 @@ const corsOptions = {
   credentials: true,
   optionsSuccessStatus: 200, // Support legacy browsers
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'expires', 'cache-control', 'x-requested-with'],
   maxAge: 86400 // Cache preflight for 24 hours
 };
 app.use(cors(corsOptions));

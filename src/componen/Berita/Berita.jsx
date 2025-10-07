@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom"; // Hook untuk navigasi programmatic
 import "./Berita.css";
 import { useScrollAnimation } from "../../hooks/useScrollAnimation"; // Custom hook scroll animation
+import { useNewsImage } from "../../context/NewsImageContext"; // Context untuk sinkronisasi gambar
 // Import gambar-gambar berita
 import berita4Img from "../../assets/Berita4.png";
 import berita1Img from "../../assets/Berita1.png";
@@ -13,6 +14,7 @@ import noImageImg from "../../assets/noimage.png";
 const Berita = () => {
   const navigate = useNavigate(); // Hook untuk navigasi ke halaman berita
   const [ref, isVisible] = useScrollAnimation(); // Hook animasi saat scroll
+  const { getNewsImage, featuredNewsImage } = useNewsImage(); // Context untuk sinkronisasi gambar
 
   // Ambil berita dari API agar sinkron dengan Admin NewsManager
   const [items, setItems] = React.useState([]);
@@ -33,18 +35,39 @@ const Berita = () => {
     "/src/assets/noimage.png": noImageImg,
   }), []);
 
-  // Helper function untuk mendapatkan gambar dengan fallback
-  const getImageWithFallback = React.useCallback((imageUrl) => {
-    if (!imageUrl) return noImageImg;
+  // Helper function untuk mendapatkan gambar dengan fallback + context sync
+  const getImageWithFallback = React.useCallback((imageUrl, newsId = null, isFeatured = false) => {
+    // Jika ini featured news, prioritaskan gambar dari context, tapi jika tidak ada, lanjut ke imageUrl
+    if (isFeatured && featuredNewsImage && featuredNewsImage !== '/src/assets/noimage.png') {
+      return featuredNewsImage;
+    }
+    
+    // Jika ada newsId, coba ambil dari context
+    if (newsId) {
+      const contextImage = getNewsImage(newsId);
+      if (contextImage !== '/src/assets/noimage.png') {
+        return contextImage;
+      }
+    }
+    
+    if (!imageUrl) {
+      return noImageImg;
+    }
     
     // Handle existing image mapping (for default/asset images)
-    if (imageMap[imageUrl]) return imageMap[imageUrl];
+    if (imageMap[imageUrl]) {
+      return imageMap[imageUrl];
+    }
     
     // Handle external URLs
-    if (imageUrl.startsWith('http')) return imageUrl;
+    if (imageUrl.startsWith('http')) {
+      return imageUrl;
+    }
     
     // Handle asset paths
-    if (imageUrl.startsWith('/src/assets/')) return imageUrl;
+    if (imageUrl.startsWith('/src/assets/')) {
+      return imageUrl;
+    }
     
     // Handle uploaded image files (filename only) - point to file-server
     if (imageUrl && !imageUrl.includes('/') && !imageUrl.startsWith('http') && !imageUrl.startsWith('/src/')) {
@@ -52,11 +75,13 @@ const Berita = () => {
     }
     
     // Handle full paths starting with /uploads - point to file-server
-    if (imageUrl.startsWith('/uploads/')) return `http://localhost:3002${imageUrl}`;
+    if (imageUrl.startsWith('/uploads/')) {
+      return `http://localhost:3002${imageUrl}`;
+    }
     
     // Fallback to default
     return noImageImg;
-  }, [imageMap]);
+  }, [imageMap, featuredNewsImage, getNewsImage]);
 
   // Refetch logic extracted for reuse
   const fetchBerita = React.useCallback(async (isMounted = true) => {
@@ -280,7 +305,7 @@ const Berita = () => {
             </button>
           </div>
           <img 
-            src={getImageWithFallback(featured?.image || featured?.imageUrl)} 
+            src={getImageWithFallback(featured?.image || featured?.imageUrl, featured?.id, true)} 
             alt="Berita utama" 
             onError={(e) => {
               e.target.src = noImageImg;
@@ -375,7 +400,7 @@ const Berita = () => {
                 return (
                   <div key={n.id || idx} className="berita-card" onClick={() => navigate(to)}>
                     <img 
-                      src={getImageWithFallback(n.image || n.imageUrl)} 
+                      src={getImageWithFallback(n.image || n.imageUrl, n.id, n.featured)} 
                       alt={n.title || `Berita ${idx + 1}`}
                       onError={(e) => {
                         e.target.src = noImageImg;
@@ -387,15 +412,15 @@ const Berita = () => {
               })
             ) : (
               <>
-                <div className="berita-card" onClick={() => navigate("/berita/1755000000001")}>
+                <div className="berita-card" onClick={() => navigate("/berita/1755000000004")}>
                   <img src={berita1Img} alt="Berita 1" />
                   <p>Penyerahan Sertifikat Hak Atas Tanah (SeHAT)...</p>
                 </div>
-                <div className="berita-card" onClick={() => navigate("/berita/1755000000002")}>
+                <div className="berita-card" onClick={() => navigate("/berita/1755085576526")}>
                   <img src={berita2Img} alt="Berita 2" />
                   <p>Pelatihan Teknologi Penangkapan Ikan oleh DKP Situbondo</p>
                 </div>
-                <div className="berita-card" onClick={() => navigate("/berita/1755000000003")}>
+                <div className="berita-card" onClick={() => navigate("/berita/1755245072973")}>
                   <img src={berita3Img} alt="Berita 3" />
                   <p>Bupati & Wakil Bupati Situbondo bersama DKP</p>
                 </div>

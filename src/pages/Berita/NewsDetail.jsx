@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./NewsDetail.css"; // Using shared styles
 import SidebarWidget from "../../componen/SidebarWidget";
+import { useNewsImage } from "../../context/NewsImageContext";
 import Berita1Img from "../../assets/Berita1.png";
 import Berita2Img from "../../assets/Berita2.png";
 import Berita3Img from "../../assets/Berita3.png";
@@ -12,6 +13,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api
 const NewsDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams(); // Get news ID from URL
+  const { getNewsImage, featuredNewsImage } = useNewsImage();
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [newsData, setNewsData] = useState(null);
   const [relatedNews, setRelatedNews] = useState([]);
@@ -70,9 +72,23 @@ const NewsDetail = () => {
     });
   };
 
-  // Get image source
+  // Get image source with context sync
   const getImageSrc = () => {
-    if (!newsData) return Berita1Img;
+    if (!newsData) {
+      // Jika tidak ada data, gunakan featured image dari context
+      return featuredNewsImage !== '/src/assets/noimage.png' ? featuredNewsImage : Berita1Img;
+    }
+    
+    // Jika ini featured news, prioritaskan context
+    if (newsData.featured && featuredNewsImage && featuredNewsImage !== '/src/assets/noimage.png') {
+      return featuredNewsImage;
+    }
+    
+    // Coba ambil dari context berdasarkan ID
+    const contextImage = getNewsImage(newsData.id);
+    if (contextImage !== '/src/assets/noimage.png') {
+      return contextImage;
+    }
     
     const imageUrl = newsData.image || newsData.imageUrl;
     
@@ -94,6 +110,11 @@ const NewsDetail = () => {
     // Handle asset paths
     if (imageUrl && imageUrl.startsWith('/src/assets/')) {
       return imageUrl;
+    }
+    
+    // Handle file server uploads
+    if (imageUrl && !imageUrl.includes('/') && !imageUrl.startsWith('http') && !imageUrl.startsWith('/src/')) {
+      return `http://localhost:3002/uploads/images/${imageUrl}`;
     }
     
     // Fallback to default

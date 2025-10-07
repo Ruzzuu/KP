@@ -43,12 +43,16 @@
 }
 
 
-/* Keep buttons together with consistent spacing */
+/* Keep buttons together with consistent spacing and center them */
 .hero-buttons {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 2rem auto;
+  padding: 0 1rem;
 }
 
 .hero-buttons a {
@@ -631,6 +635,17 @@ section {
 
   .hero-image img {
     max-width: 100%;
+  }
+
+  .hero-buttons {
+    flex-direction: column;
+    gap: 16px;
+    margin: 2rem auto;
+  }
+
+  .hero-buttons a {
+    width: 100%;
+    max-width: 280px;
   }
 
   /* Mobile responsive for scholarship grid */

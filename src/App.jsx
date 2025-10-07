@@ -3,6 +3,7 @@
 import React from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { NewsImageProvider } from "./context/NewsImageContext";
 
 // Import komponen untuk halaman utama (homepage)
 import Navbar from "./componen/Navbar/Navbar";           // Navigation bar
@@ -24,6 +25,7 @@ import RegisterForm from "./pages/RegisterForm/RegisterForm"; // Form pendaftara
 import AdminDashboard from "./pages/AdminDashboard/AdminDashboard"; // Dashboard admin
 import UserDashboard from "./pages/UserDashboard/UserDashboard";     // Dashboard user
 import SponsorPage from "./pages/SponsorPage/SponsorPage"; // Halaman khusus sponsor
+import LayananPage from "./pages/Layanan/LayananPage"; // Halaman khusus layanan
 import Beasiswa from "./pages/Beasiswa/beasiswa_page";         // Halaman informasi beasiswa
 import BeasiswaDetail from "./pages/Beasiswa/BeasiswaDetail"; // Halaman detail beasiswa
 import LayananDetail from "./pages/Layanan/LayananDetail"; // Halaman detail layanan
@@ -49,8 +51,8 @@ const App = () => {
   // Berguna untuk halaman yang dibuka di tab/window baru atau navigasi direct
   useEffect(() => {
     if (location.pathname === '/sponsor' || location.pathname === '/tentang' || 
-        location.pathname === '/anggota' || location.pathname === '/berita' || 
-        location.pathname === '/layanan' || location.pathname === '/beasiswa') {
+        location.pathname === '/anggota' || location.pathname === '/layanan' || 
+        location.pathname === '/beasiswa') {
       window.scrollTo(0, 0); // Scroll ke posisi teratas halaman
     }
   }, [location.pathname]); // Dependency array: effect dijalankan ketika pathname berubah
@@ -71,7 +73,7 @@ const App = () => {
   }, [location.pathname, location.hash]); // Re-run ketika path atau hash berubah
 
   return (
-    <>
+    <NewsImageProvider>
       <Routes>
         {/* ROUTE UTAMA - HOMEPAGE (/) */}
         {/* Halaman utama yang menggabungkan semua section dalam satu page */}
@@ -87,12 +89,16 @@ const App = () => {
               <Tentang />       {/* Section tentang organisasi PERGUNU */}
               <Anggota />       {/* Section tim inti dan keanggotaan */}
               <Berita />        {/* Section berita terbaru (3 artikel) */}
-              <BeasiswaCard />  {/* Section program beasiswa dan bantuan */}
-              <Layanan />       {/* Section layanan yang ditawarkan PERGUNU */}
+              {/* COMMENTED OUT - DAPAT DIKEMBALIKAN NANTI */}
+              {/* <BeasiswaCard />  Section program beasiswa dan bantuan */}
+              {/* <Layanan />       Section layanan yang ditawarkan PERGUNU */}
+              {/* END COMMENTED SECTION */}
               <div id="status-tracker">
                 <StatusTracker />  {/* Section cek status pendaftaran dengan form */}
               </div>
-              <Sponsor />  {/* Section sponsor, partner, dan mitra kerjasama */}
+              {/* COMMENTED OUT - DAPAT DIKEMBALIKAN NANTI */}
+              {/* <Sponsor />  Section sponsor, partner, dan mitra kerjasama */}
+              {/* END COMMENTED SECTION */}
               <Footer />   {/* Footer dengan informasi kontak dan copyright */}
             </>
           }
@@ -112,11 +118,11 @@ const App = () => {
         
         {/* ROUTES HALAMAN SECTION - Versi halaman penuh dari section homepage */}
         {/* Untuk user yang ingin fokus pada satu section tertentu */}
-        <Route path="/sponsor" element={<><Navbar /><SponsorPage /><Footer /></>} />
+        <Route path="/sponsor" element={<SponsorPage />} />
         <Route path="/tentang" element={<><Navbar /><Tentang /><Footer /></>} />
         <Route path="/anggota" element={<><Navbar /><Anggota /><Footer /></>} />
-        <Route path="/berita" element={<><Navbar /><Berita /><Footer /></>} />
-        <Route path="/layanan" element={<><Navbar /><Layanan /><Footer /></>} />
+        {/* <Route path="/berita" element={<><Navbar /><Berita /><Footer /></>} /> */}
+        <Route path="/layanan" element={<LayananPage />} />
         <Route path="/layanan/:id" element={<><Navbar /><LayananDetail /><Footer /></>} />
         <Route path="/beasiswa" element={<><Navbar /><Beasiswa /><Footer /></>} />
         <Route path="/beasiswa/:id" element={<BeasiswaDetail />} />
@@ -128,7 +134,7 @@ const App = () => {
   <Route path="/admin" element={<PendingApplicationsProvider><AdminDashboard /></PendingApplicationsProvider>} />           {/* Dashboard untuk admin */}
         <Route path="/user-dashboard" element={<UserDashboard />} />   {/* Dashboard untuk user */}
       </Routes>
-    </>
+    </NewsImageProvider>
   );
 };
 

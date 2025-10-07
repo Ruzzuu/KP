@@ -58,8 +58,16 @@ const Navbar = () => {
     if (location.pathname !== '/') return;
 
     const handleScroll = () => {
-      const sections = ['berita', 'beasiswa', 'layanan', 'sponsor', 'hubungi'];
+      const sections = ['berita', 'beasiswa', 'hubungi']; // Removed layanan and sponsor since they're separate pages
       const scrollPosition = window.scrollY + 100; // Offset untuk navbar
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+
+      // Special case untuk footer/hubungi - jika user sudah scroll mendekati bottom
+      if (scrollPosition + windowHeight >= documentHeight - 50) {
+        setActiveSection('hubungi');
+        return;
+      }
 
       for (const section of sections) {
         const element = document.getElementById(section);
@@ -122,15 +130,6 @@ const Navbar = () => {
               </Link>
             </li>
             <li>
-              {/* Berita - Always link to /berita page */}
-              <Link 
-                to="/berita"
-                className={location.pathname === '/berita' || (isHome && activeSection === 'berita') ? 'sponsor-active' : ''}
-              >
-                Berita
-              </Link>
-            </li>
-            <li>
               {/* Beasiswa - Always link to /beasiswa page */}
               <Link 
                 to="/beasiswa"
@@ -140,40 +139,22 @@ const Navbar = () => {
               </Link>
             </li>
             <li>
-              {/* Layanan - Link to services section or page */}
-              {isHome ? (
-                <a 
-                  href="#layanan"
-                  className={activeSection === 'layanan' ? 'sponsor-active' : ''}
-                >
-                  Layanan
-                </a>
-              ) : (
-                <Link 
-                  to="/#layanan"
-                  className={location.pathname === '/layanan' ? 'sponsor-active' : ''}
-                >
-                  Layanan
-                </Link>
-              )}
+              {/* Layanan - Link to dedicated Layanan page */}
+              <Link 
+                to="/layanan"
+                className={location.pathname === '/layanan' ? 'sponsor-active' : ''}
+              >
+                Layanan
+              </Link>
             </li>
             <li>
-              {/* Sponsor - Link to sponsor section or page */}
-              {isHome ? (
-                <a 
-                  href="#sponsor"
-                  className={activeSection === 'sponsor' ? 'sponsor-active' : ''}
-                >
-                  Sponsor
-                </a>
-              ) : (
-                <Link 
-                  to="/#sponsor" 
-                  className={location.pathname === '/sponsor' ? 'sponsor-active' : ''}
-                >
-                  Sponsor
-                </Link>
-              )}
+              {/* Sponsor - Link to dedicated Sponsor page */}
+              <Link 
+                to="/sponsor"
+                className={location.pathname === '/sponsor' ? 'sponsor-active' : ''}
+              >
+                Sponsor
+              </Link>
             </li>
             <li>
               {/* Hubungi Kami - Link to contact section */}

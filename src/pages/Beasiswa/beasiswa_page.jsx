@@ -178,15 +178,15 @@ const Beasiswa = () => {
                 Wujudkan impian pendidikan dengan berbagai program beasiswa yang tersedia
                 untuk anggota PERGUNU dan keluarga
                 </p>
+            </div>
+            <div className="hero-image hero-image-frame">
+            <img src="https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=600" alt="Scholarship" />
+            </div>
             <div className="hero-buttons">
                 <a href="#scholarships" className="btn-primary">
           🎓    Lihat Semua Beasiswa
                 </a>
                 <a href="#" className="btn-outline">Panduan Pendaftaran</a>
-            </div>
-            </div>
-            <div className="hero-image hero-image-frame">
-            <img src="https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=600" alt="Scholarship" />
             </div>
             </div>
         </section>

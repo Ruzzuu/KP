@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './SidebarWidget.css';
+import { useNewsImage } from '../../context/NewsImageContext';
 
 // Import gambar default
 import berita1Img from '../../assets/Berita1.png';
@@ -18,6 +19,7 @@ const SidebarWidget = ({
   updateInterval = 30000 // 30 seconds
 }) => {
   const navigate = useNavigate();
+  const { getNewsImage, featuredNewsImage } = useNewsImage();
   const [newsData, setNewsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -75,7 +77,21 @@ const SidebarWidget = ({
   };
 
   // Mendapatkan URL gambar yang benar
-  const getImageSrc = (imageUrl) => {
+  const getImageSrc = (imageUrl, newsId = null, isFeatured = false) => {
+    // Prioritas 1: Jika ini featured news, gunakan featured image dari context
+    if (isFeatured && featuredNewsImage && featuredNewsImage !== '/src/assets/noimage.png') {
+      return featuredNewsImage;
+    }
+    
+    // Prioritas 2: Jika ada newsId, coba ambil dari context
+    if (newsId) {
+      const contextImage = getNewsImage(newsId);
+      if (contextImage !== '/src/assets/noimage.png') {
+        return contextImage;
+      }
+    }
+    
+    // Prioritas 3: Process imageUrl yang diterima
     if (!imageUrl) return noImageImg;
     
     // Handle base64 data URLs (from new upload system)
@@ -83,7 +99,22 @@ const SidebarWidget = ({
       return imageUrl;
     }
     
-    // Cek apakah sudah ada mapping
+    // Handle file server URLs (sudah lengkap)
+    if (imageUrl.startsWith('http://localhost:3002/uploads/')) {
+      return imageUrl;
+    }
+    
+    // Handle filename only - convert ke file server URL
+    if (imageUrl && !imageUrl.includes('/') && !imageUrl.startsWith('http') && !imageUrl.startsWith('/src/')) {
+      return `http://localhost:3002/uploads/images/${imageUrl}`;
+    }
+    
+    // Handle path starting with /uploads - convert ke file server URL
+    if (imageUrl.startsWith('/uploads/')) {
+      return `http://localhost:3002${imageUrl}`;
+    }
+    
+    // Cek apakah sudah ada mapping untuk asset images
     if (imageMap[imageUrl]) return imageMap[imageUrl];
     
     // Handle external URLs
@@ -112,11 +143,7 @@ const SidebarWidget = ({
       const timestamp = new Date().getTime();
       const response = await fetch(`${API_BASE}/news?_t=${timestamp}`, {
         method: 'GET',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
+        cache: 'no-cache'
       });
       
       if (!response.ok) {
@@ -124,7 +151,16 @@ const SidebarWidget = ({
       }
       
       const data = await response.json();
-      console.log('📊 SidebarWidget: Fetched', data.length, 'news items');
+      console.log('📊 SidebarWidget: Fetched', data.length, 'news items', data);
+      
+      // Pastikan data adalah array dan tidak kosong
+      if (!Array.isArray(data) || data.length === 0) {
+        console.warn('⚠️ SidebarWidget: No valid data received, using fallback');
+        setNewsData(getDefaultNews());
+        setLastUpdated(new Date());
+        setLoading(false);
+        return;
+      }
       
       // Filter data (hindari berita yang sedang dibaca jika ada)
       let filteredData = data;
@@ -137,6 +173,7 @@ const SidebarWidget = ({
         .sort((a, b) => new Date(b.createdAt || b.publishDate) - new Date(a.createdAt || a.publishDate))
         .slice(0, maxItems);
       
+      console.log('📊 SidebarWidget: Using real data:', sortedData);
       setNewsData(sortedData);
       setLastUpdated(new Date());
       setLoading(false);
@@ -151,34 +188,34 @@ const SidebarWidget = ({
     }
   }, [API_BASE, maxItems, currentNewsId]);
 
-  // Data berita default sebagai fallback
+  // Data berita default sebagai fallback - Updated IDs to match actual database
   const getDefaultNews = () => [
     {
-      id: '1755000000001',
-      title: 'Penyerahan Sertifikat Hak Atas Tanah (SeHAT) Nelayan',
-      summary: 'Program sertifikasi tanah untuk meningkatkan kesejahteraan nelayan di wilayah pesisir.',
-      author: 'PERGUNU Situbondo',
+      id: '1758789249579', // Real ID from database
+      title: 'Penyerahan Simbolis Sertifikat Hak Atas Tanah (SeHAT) Nelayan',
+      summary: 'Kabupaten Situbondo kembali menunjukkan komitmennya dalam memberikan kepastian hukum kepada masyarakat, khususnya para nelayan.',
+      author: 'Tim PERGUNU',
       category: 'Sertifikasi',
-      image: '/src/assets/Berita1.png',
-      createdAt: new Date(Date.now() - 86400000).toISOString()
+      image: '1758796907483_1wb5jimp0tkh.png', // Real image from database
+      createdAt: '2025-09-25T08:34:09.579Z'
     },
     {
-      id: '1755000000002',
-      title: 'Pelatihan Teknologi Penangkapan Ikan Modern',
-      summary: 'Upaya peningkatan kapasitas nelayan melalui teknologi modern dan berkelanjutan.',
+      id: '1758789355712', // Real ID from database
+      title: 'Pelatihan Teknologi Penangkapan Ikan oleh Dinas Perikanan Situbondo',
+      summary: 'Dinas Perikanan Kabupaten Situbondo menggelar program pelatihan teknologi penangkapan ikan yang bertujuan untuk meningkatkan kemampuan dan keterampilan nelayan lokal.',
       author: 'DKP Situbondo',
       category: 'Pelatihan',
-      image: '/src/assets/Berita2.png',
-      createdAt: new Date(Date.now() - 172800000).toISOString()
+      image: '1758796940817_h4wqyf20s48.png', // Real image from database
+      createdAt: '2025-09-25T08:35:55.712Z'
     },
     {
-      id: '1755000000003',
-      title: 'Kunjungan Bupati & Wakil Bupati Situbondo',
-      summary: 'Koordinasi program pembangunan sektor kelautan dan perikanan daerah.',
+      id: '1758789415408', // Real ID from database
+      title: 'Bupati dan Wakil Bupati Situbondo Bersama Dinas Perikanan',
+      summary: 'Bupati Situbondo, Dadang Wigiarto, S.H., M.Si., bersama Wakil Bupati, Ir. H. Yusuf Widyatmoko, M.M., melaksanakan kunjungan kerja ke Dinas Perikanan Kabupaten Situbondo.',
       author: 'Pemerintah Situbondo',
       category: 'Pemerintahan',
-      image: '/src/assets/Berita3.png',
-      createdAt: new Date(Date.now() - 259200000).toISOString()
+      image: '1758797116285_sq93xw6og3.png', // Real image from database
+      createdAt: '2025-09-25T08:36:55.408Z'
     }
   ];
 
@@ -186,9 +223,16 @@ const SidebarWidget = ({
   useEffect(() => {
     fetchNewsData();
 
-    // Listen for live update event
+    // Listen for live update events
     const handler = () => fetchNewsData();
+    const imageUpdateHandler = () => {
+      console.log('🖼️ SidebarWidget: Image updated, refreshing data...');
+      fetchNewsData();
+    };
+    
     window.addEventListener('news-updated', handler);
+    window.addEventListener('news-image-updated', imageUpdateHandler);
+    window.addEventListener('featured-news-changed', imageUpdateHandler);
 
     let intervalId;
     if (autoUpdate && updateInterval > 0) {
@@ -201,6 +245,8 @@ const SidebarWidget = ({
 
     return () => {
       window.removeEventListener('news-updated', handler);
+      window.removeEventListener('news-image-updated', imageUpdateHandler);
+      window.removeEventListener('featured-news-changed', imageUpdateHandler);
       if (intervalId) {
         console.log('🛑 SidebarWidget: Cleaning up auto-update interval');
         clearInterval(intervalId);
@@ -286,7 +332,7 @@ const SidebarWidget = ({
               >
                 <div className="news-image-wrapper">
                   <img 
-                    src={getImageSrc(news.image || news.imageUrl)} 
+                    src={getImageSrc(news.image || news.imageUrl, news.id, news.featured)} 
                     alt={news.title}
                     loading="lazy"
                     onError={(e) => {
