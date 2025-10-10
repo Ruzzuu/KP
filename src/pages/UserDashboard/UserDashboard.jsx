@@ -13,6 +13,27 @@ const UserDashboard = () => {
     lastLogin: null
   });
 
+  // Helper function to safely format dates
+  const formatDateSafe = (dateInput) => {
+    if (!dateInput) return 'Tidak tersedia';
+    
+    // If it's already in the desired format (contains comma and dots), return as is
+    if (typeof dateInput === 'string' && dateInput.includes(',') && dateInput.includes('.')) {
+      return dateInput;
+    }
+    
+    try {
+      const date = new Date(dateInput);
+      if (isNaN(date.getTime())) {
+        // If parsing fails, return original string
+        return dateInput;
+      }
+      return date.toLocaleString('id-ID');
+    } catch (error) {
+      return dateInput; // Return original if any error
+    }
+  };
+
   // Get authenticated user data
   useEffect(() => {
     const fetchUserData = async () => {
@@ -91,7 +112,7 @@ const UserDashboard = () => {
         setUserStats({
           availableCertificates: userWithDefaults.certificates.length,
           totalDownloads: userWithDefaults.downloads || totalDownloads,
-          lastLogin: userWithDefaults.lastDownload || new Date().toISOString().split('T')[0]
+          lastLogin: formatDateSafe(userWithDefaults.lastDownload || new Date())
         });
 
       } catch (error) {
@@ -116,7 +137,7 @@ const UserDashboard = () => {
             setUserStats({
               availableCertificates: 0,
               totalDownloads: 0,
-              lastLogin: new Date().toISOString().split('T')[0]
+              lastLogin: formatDateSafe(new Date())
             });
             
             console.log('⚠️ Using fallback user data:', fallbackUser);
@@ -315,7 +336,9 @@ const UserDashboard = () => {
                 <p>{certificate.description || 'Sertifikat yang diupload'}</p>
                 <div className="certificate-meta">
                   <span className="category">{certificate.category || 'PDF'}</span>
-                  <span className="upload-date">{certificate.uploadDate}</span>
+                  <span className="upload-date">
+                    {formatDateSafe(certificate.uploadDate)}
+                  </span>
                 </div>
               </div>
               {(() => {
@@ -407,9 +430,7 @@ const UserDashboard = () => {
                       <div className="detail-item">
                         <span className="label">📅 Upload:</span>
                         <span className="value">
-                          {certificate.uploadDate 
-                            ? new Date(certificate.uploadDate).toLocaleDateString('id-ID')
-                            : 'Tidak diketahui'}
+                          {formatDateSafe(certificate.uploadDate)}
                         </span>
                       </div>
                       <div className="detail-item">
@@ -534,7 +555,7 @@ const UserDashboard = () => {
             {user?.downloadHistory.map(history => (
               <tr key={history.id}>
                 <td>{history.certificateTitle}</td>
-                <td>{history.downloadDate}</td>
+                <td>{formatDateSafe(history.downloadDate)}</td>
                 <td className="file-name">{history.fileName}</td>
               </tr>
             ))}

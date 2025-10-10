@@ -65,8 +65,8 @@
           "downloadCount": 2
         }
       ],
-      "downloads": 21,
-      "lastDownload": "10/8/2025, 03.38.17",
+      "downloads": 23,
+      "lastDownload": "2025-10-10T15:39:41.727Z",
       "downloadHistory": [
         {
           "id": "1754771897122",
@@ -168,6 +168,18 @@
           "id": 1754326243829,
           "certificateTitle": "Additional+Exercises+Combinatorics.pdf",
           "downloadDate": "4/8/2025, 23.50.43",
+          "fileName": "Additional+Exercises+Combinatorics.pdf"
+        },
+        {
+          "id": 1760110150550,
+          "certificateTitle": "Additional+Exercises+Combinatorics.pdf",
+          "downloadDate": "2025-10-10T15:29:10.550Z",
+          "fileName": "Additional+Exercises+Combinatorics.pdf"
+        },
+        {
+          "id": 1760110781727,
+          "certificateTitle": "Additional+Exercises+Combinatorics.pdf",
+          "downloadDate": "2025-10-10T15:39:41.727Z",
           "fileName": "Additional+Exercises+Combinatorics.pdf"
         }
       ],
@@ -499,6 +511,12 @@
       "userId": "2",
       "createdAt": "2025-10-07T15:05:52.447Z",
       "expiresAt": "2025-10-08T15:05:52.447Z"
+    },
+    {
+      "id": "17601101386240.kbq4zzpzzxn",
+      "userId": "bdef",
+      "createdAt": "2025-10-10T15:28:58.624Z",
+      "expiresAt": "2025-10-11T15:28:58.624Z"
     }
   ],
   "applications": [
