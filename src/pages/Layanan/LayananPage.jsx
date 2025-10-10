@@ -2,6 +2,7 @@ import React from 'react';
 import Navbar from "../../componen/Navbar/Navbar";
 import Footer from "../../componen/Footer/Footer";
 import Layanan from "../../componen/Layanan/Layanan";
+import bagroundlayanan from "../../assets/bagroundlayanan.png";
 import './LayananPage.css';
 
 const LayananPage = () => {
@@ -10,7 +11,15 @@ const LayananPage = () => {
       <Navbar />
       <div className="page-content">
         {/* Hero Section untuk halaman Layanan */}
-        <section className="page-hero">
+        <section 
+          className="page-hero"
+          style={{
+            backgroundImage: `url(${bagroundlayanan})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        >
           <div className="container">
             <div className="hero-content">
               <div className="hero-icon">

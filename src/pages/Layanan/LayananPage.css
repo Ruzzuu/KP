@@ -9,7 +9,7 @@
 }
 
 .page-hero {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  /* Background akan diatur via inline style dengan gambar */
   color: white;
   padding: 140px 0 100px;
   text-align: center;
@@ -19,6 +19,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.page-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.6); /* Dark overlay untuk readability */
+  z-index: 0;
 }
 
 .page-hero .container {

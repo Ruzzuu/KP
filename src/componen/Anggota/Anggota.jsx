@@ -1,15 +1,15 @@
 import React from "react";
 import "./anggota.css";
 import { useScrollAnimation } from "../../hooks/useScrollAnimation"; // Custom hook untuk animasi scroll
-import andrewImg from "../../assets/andrew.png"; // Import gambar anggota
-import delwynImg from "../../assets/delwyn.png";
-import sergioImg from "../../assets/sergio.png";
+import ketua from "../../assets/ketua.png"; // Import gambar anggota
+import sekretaris from "../../assets/sekretaris.png";
+import bendahara from "../../assets/bendahara.png";
 
 // Data anggota organisasi - bisa dipindah ke file terpisah atau fetch dari API
 const anggotaList = [
-  { nama: "Andrew", jabatan: "Ketua", foto: andrewImg },
-  { nama: "Delwyn", jabatan: "Wakil Ketua", foto: delwynImg },
-  { nama: "Sergio", jabatan: "Sekretaris", foto: sergioImg },
+  { nama: "Bendahara", jabatan: "Wakil Ketua", foto: bendahara},
+  { nama: "Ketua", jabatan: "Ketua", foto: ketua },
+  { nama: "Sekretaris", jabatan: "Sekretaris", foto: sekretaris },
 ];
 
 // KOMPONEN ANGGOTA - Menampilkan daftar anggota organisasi dengan animasi scroll

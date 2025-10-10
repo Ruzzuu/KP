@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import Navbar from "../../componen/Navbar/Navbar";
 import Footer from "../../componen/Footer/Footer";
 import Sponsor from "../../componen/Sponsor/Sponsor";
+import beasiswaPoster from "../../assets/beasiswa_poster.png";
 import './SponsorPage.css';
 
 const SponsorPage = () => {
@@ -27,10 +28,18 @@ const SponsorPage = () => {
       <Navbar />
       <div className="page-content">
         {/* Hero Section untuk halaman Sponsor */}
-        <section className="page-hero">
+        <section 
+          className="sponsor-page-hero"
+          style={{
+            backgroundImage: `url(${beasiswaPoster})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        >
           <div className="container">
-            <div className="hero-content">
-              <div className="hero-icon">
+            <div className="sponsor-hero-content">
+              <div className="sponsor-hero-icon">
                 <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M17 21V19C17 16.7909 15.2091 15 13 15H5C2.79086 15 1 16.7909 1 19V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -38,23 +47,23 @@ const SponsorPage = () => {
                   <path d="M16 3.12598C17.7252 3.56986 19 5.13616 19 7C19 8.86384 17.7252 10.4301 16 10.874" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-              <h1 className="page-title">Partner & Sponsor</h1>
-              <p className="page-subtitle">
+              <h1 className="sponsor-page-title">Partner & Sponsor</h1>
+              <p className="sponsor-page-subtitle">
                 Berkolaborasi dengan berbagai institusi dan organisasi untuk kemajuan 
                 pendidikan Indonesia dan pengembangan PERGUNU Situbondo
               </p>
-              <div className="hero-stats">
-                <div className="stat-item">
-                  <span className="stat-number">50+</span>
-                  <span className="stat-label">Mitra Kerjasama</span>
+              <div className="sponsor-hero-stats">
+                <div className="sponsor-stat-item">
+                  <span className="sponsor-stat-number">50+</span>
+                  <span className="sponsor-stat-label">Mitra Kerjasama</span>
                 </div>
-                <div className="stat-item">
-                  <span className="stat-number">25+</span>
-                  <span className="stat-label">Sponsor Aktif</span>
+                <div className="sponsor-stat-item">
+                  <span className="sponsor-stat-number">25+</span>
+                  <span className="sponsor-stat-label">Sponsor Aktif</span>
                 </div>
-                <div className="stat-item">
-                  <span className="stat-number">10</span>
-                  <span className="stat-label">Tahun Pengalaman</span>
+                <div className="sponsor-stat-item">
+                  <span className="sponsor-stat-number">10</span>
+                  <span className="sponsor-stat-label">Tahun Pengalaman</span>
                 </div>
               </div>
             </div>

@@ -8,8 +8,8 @@
   flex: 1;
 }
 
-.page-hero {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+.sponsor-page-hero {
+  /* Background akan diatur via inline style dengan gambar */
   color: white;
   padding: 140px 0 100px;
   text-align: center;
@@ -26,7 +26,7 @@
   100% { transform: translateX(100%); }
 }
 
-.page-hero .container {
+.sponsor-page-hero .container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 2rem;
@@ -37,7 +37,7 @@
   justify-content: center;
 }
 
-.hero-content {
+.sponsor-hero-content {
   max-width: 800px;
   margin: 0 auto;
   text-align: center;
@@ -47,7 +47,7 @@
   justify-content: center;
 }
 
-.hero-icon {
+.sponsor-hero-icon {
   margin-bottom: 2rem;
   color: #60a5fa;
   animation: pulse 2s infinite;
@@ -58,17 +58,17 @@
   50% { opacity: 0.8; transform: scale(1.05); }
 }
 
-.page-title {
+.sponsor-page-title {
   font-size: 3.8rem;
   font-weight: 800;
   margin-bottom: 1.5rem;
   line-height: 1.1;
   color: #ffffff;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  text-shadow: 2px 2px 8px rgba(0,0,0,0.8), 1px 1px 3px rgba(0,0,0,0.9);
   letter-spacing: -0.02em;
 }
 
-.page-subtitle {
+.sponsor-page-subtitle {
   font-size: 1.3rem;
   line-height: 1.7;
   color: #e2e8f0;
@@ -77,35 +77,38 @@
   max-width: 600px;
   margin-left: auto;
   margin-right: auto;
+  text-shadow: 1px 1px 6px rgba(0,0,0,0.8);
 }
 
-.hero-stats {
+.sponsor-hero-stats {
   display: flex;
   justify-content: center;
   gap: 4rem;
   margin-top: 3rem;
 }
 
-.stat-item {
+.sponsor-stat-item {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.stat-number {
+.sponsor-stat-number {
   font-size: 2.5rem;
   font-weight: 800;
-  color: #60a5fa;
+  color: #ffffff;
   line-height: 1;
   margin-bottom: 0.5rem;
+  text-shadow: 1px 1px 4px rgba(0,0,0,0.7);
 }
 
-.stat-label {
+.sponsor-stat-label {
   font-size: 0.9rem;
-  color: #cbd5e1;
+  color: #ffffff;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  text-shadow: 1px 1px 4px rgba(0,0,0,0.7);
 }
 
 /* Responsive Design */
@@ -120,7 +123,7 @@
 }
 
 @media (max-width: 768px) {
-  .page-hero {
+  .sponsor-page-hero {
     padding: 120px 0 80px;
     min-height: 60vh;
   }
@@ -148,13 +151,13 @@
     font-size: 2rem;
   }
   
-  .page-hero .container {
+  .sponsor-page-hero .container {
     padding: 0 1rem;
   }
 }
 
 @media (max-width: 480px) {
-  .page-hero {
+  .sponsor-page-hero {
     padding: 100px 0 70px;
   }
   
