@@ -138,7 +138,19 @@ const NewsDetail = () => {
           <h2>😕 Berita Tidak Ditemukan</h2>
           <p>{error || 'Berita yang Anda cari tidak tersedia.'}</p>
           <button 
-            onClick={() => navigate('/berita')} 
+            onClick={() => {
+              navigate('/');
+              // Delay scroll to ensure page is loaded
+              setTimeout(() => {
+                const beritaSection = document.querySelector('.berita-section');
+                if (beritaSection) {
+                  beritaSection.scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start' 
+                  });
+                }
+              }, 100);
+            }}
             style={{
               padding: '12px 24px',
               background: '#0f7536',
@@ -263,7 +275,19 @@ const NewsDetail = () => {
 
                 <div className="article-actions">
                   <button 
-                    onClick={() => navigate('/berita')}
+                    onClick={() => {
+                      navigate('/');
+                      // Delay scroll to ensure page is loaded
+                      setTimeout(() => {
+                        const beritaSection = document.querySelector('.berita-section');
+                        if (beritaSection) {
+                          beritaSection.scrollIntoView({ 
+                            behavior: 'smooth',
+                            block: 'start' 
+                          });
+                        }
+                      }, 100);
+                    }}
                     className="btn-back"
                   >
                     ← Kembali ke Berita

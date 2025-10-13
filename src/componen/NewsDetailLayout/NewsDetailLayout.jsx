@@ -183,7 +183,21 @@ const NewsDetailLayout = () => {
         <div className="error-container">
           <h2>❌ Error</h2>
           <p>{error || 'Berita tidak ditemukan'}</p>
-          <button onClick={() => navigate('/berita')} className="btn-back">
+          <button 
+            onClick={() => {
+              navigate('/');
+              setTimeout(() => {
+                const beritaSection = document.querySelector('.berita-section');
+                if (beritaSection) {
+                  beritaSection.scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start' 
+                  });
+                }
+              }, 100);
+            }} 
+            className="btn-back"
+          >
             ← Kembali ke Berita
           </button>
         </div>
@@ -311,7 +325,18 @@ const NewsDetailLayout = () => {
 
                 <div className="navigation-section">
                   <button 
-                    onClick={() => navigate('/berita')}
+                    onClick={() => {
+                      navigate('/');
+                      setTimeout(() => {
+                        const beritaSection = document.querySelector('.berita-section');
+                        if (beritaSection) {
+                          beritaSection.scrollIntoView({ 
+                            behavior: 'smooth',
+                            block: 'start' 
+                          });
+                        }
+                      }, 100);
+                    }}
                     className="btn-back"
                   >
                     ← Kembali ke Semua Berita

@@ -1,6 +1,6 @@
 // ApplicationManager Component - Komponen untuk mengelola aplikasi pendaftaran
 // Digunakan di AdminDashboard untuk review, approve, dan reject pendaftaran
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 // import { emailService } from '../../services/EmailService';  // Service untuk mengirim email notifikasi (unused for now)
 import { ApplicationService } from '../../services/ApplicationService';
 import './ApplicationManager.css';
@@ -32,36 +32,8 @@ const ApplicationManager = ({ onPendingCountChange, onUsersChanged }) => {
   const [deletingId, setDeletingId] = useState(null);
 
   // Ref untuk memaksa styling hijau
-  const greenNumberRef = useRef(null);
 
-  // Effect untuk memaksa warna hijau dengan JavaScript - FIXED VERSION
-  useEffect(() => {
-    const forceGreenStyling = () => {
-      if (greenNumberRef.current) {
-        // APPLY GREEN STYLING WITH MAXIMUM PRIORITY
-        greenNumberRef.current.style.setProperty('color', '#0f7536', 'important');
-        greenNumberRef.current.style.setProperty('-webkit-text-fill-color', '#0f7536', 'important');
-        greenNumberRef.current.style.setProperty('font-weight', '700', 'important');
-        greenNumberRef.current.style.setProperty('text-shadow', 'none', 'important');
-        greenNumberRef.current.style.setProperty('background-color', 'transparent', 'important');
-        
-        // Additional force properties
-        greenNumberRef.current.style.color = '#0f7536';
-        greenNumberRef.current.style.fontWeight = '700';
-        greenNumberRef.current.setAttribute('data-forced-green', 'true');
-        
-        return true; // Signal success
-      }
-      return false;
-    };
 
-    // Apply immediately when component mounts and when applications count changes
-    forceGreenStyling();
-    
-    return () => {
-      // Cleanup if needed
-    };
-  }, [applications.length]); // Only re-run when applications count changes, not the whole array
 
   // Effect untuk fetch aplikasi saat component mount
   useEffect(() => {
@@ -183,25 +155,19 @@ const ApplicationManager = ({ onPendingCountChange, onUsersChanged }) => {
   const processedApplications = applications.filter(app => app.status !== 'pending');  // Aplikasi yang sudah diproses
 
   // Inform parent about pending count when data changes (to sync dashboard tiles)
-  const lastPendingRef = useRef(pendingApplications.length);
   useEffect(() => {
     if (typeof onPendingCountChange === 'function') {
-      const next = pendingApplications.length;
-      if (lastPendingRef.current !== next) {
-        try {
-          onPendingCountChange(next);
-          lastPendingRef.current = next;
-        } catch (e) {
-          console.warn('onPendingCountChange callback error:', e);
-        }
+      const pendingCount = pendingApplications.length;
+      try {
+        onPendingCountChange(pendingCount);
+      } catch (e) {
+        console.warn('onPendingCountChange callback error:', e);
       }
     }
     // Also update shared context if available
     if (setPendingCount) {
-      const next = pendingApplications.length;
-      if (lastPendingRef.current !== next) {
-        setPendingCount(next);
-      }
+      const pendingCount = pendingApplications.length;
+      setPendingCount(pendingCount);
     }
   }, [pendingApplications.length, onPendingCountChange, setPendingCount]);
 
@@ -242,20 +208,7 @@ const ApplicationManager = ({ onPendingCountChange, onUsersChanged }) => {
           <div className="applications-stats">
             <div className="stat-item pending-review">
               <div 
-                ref={greenNumberRef}
-                id="FORCE-GREEN-PENDING-NUMBER"
-                className="stat-number pending-review-number GREEN-FORCE JAVASCRIPT-FORCED" 
-                style={{
-                  color: '#0f7536 !important', 
-                  fontWeight: '700 !important',
-                  WebkitTextFillColor: '#0f7536 !important',
-                  textShadow: 'none !important',
-                  backgroundColor: 'transparent !important',
-                  display: 'block !important',
-                  fontSize: '2rem !important'
-                }}
-                data-force-green="true"
-                data-green-number="pending"
+                className="stat-number pending-review-number"
               >
                 {pendingApplications.length}
               </div>
