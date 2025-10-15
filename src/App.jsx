@@ -9,6 +9,7 @@ import { NewsImageProvider } from "./context/NewsImageContext";
 import Navbar from "./componen/Navbar/Navbar";           // Navigation bar
 import Hero from "./componen/Hero/Hero";                 // Hero section dengan animasi
 import Tentang from "./componen/Tentang/Tentang";        // Section tentang PERGUNU
+import StrukturOrganisasi from "./componen/StrukturOrganisasi/StrukturOrganisasi"; // Section struktur organisasi departemen
 import Berita from "./componen/Berita/Berita";           // Grid berita terbaru
 import Anggota from "./componen/Anggota/Anggota";        // Tim dan anggota
 import Layanan from "./componen/Layanan/Layanan";        // Layanan yang ditawarkan
@@ -87,6 +88,7 @@ const App = () => {
                 <Hero />  {/* Section banner utama dengan CTA dan animasi typing */}
               </div>
               <Tentang />       {/* Section tentang organisasi PERGUNU */}
+              <StrukturOrganisasi />  {/* Section struktur organisasi dan departemen-departemen */}
               <Anggota />       {/* Section tim inti dan keanggotaan */}
               <Berita />        {/* Section berita terbaru (3 artikel) */}
               {/* COMMENTED OUT - DAPAT DIKEMBALIKAN NANTI */}
