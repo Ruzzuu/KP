@@ -219,15 +219,37 @@ export const ApplicationService = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...payload, username: tryUsername })
       });
+      
+      // Success: New user created
       if (res.ok) {
         const data = await res.json();
-        return { user: data.user, username: tryUsername };
+        return { 
+          user: data.user, 
+          username: tryUsername,
+          isExisting: data.isExisting || false
+        };
       }
-      // if conflict => try again, else break
+      
+      // NEW: Handle email already registered error (409 with EMAIL_ALREADY_EXISTS)
       if (res.status === 409) {
-        attempt++;
-        lastError = new Error('Username or email already exists');
-        continue;
+        const conflictErrorData = await res.json();
+        
+        // Check if error is due to EMAIL already exists (not username)
+        if (conflictErrorData.type === 'EMAIL_ALREADY_EXISTS') {
+          console.error('❌ Email already registered:', app.email);
+          throw new Error(`Email ${app.email} sudah terdaftar. Gunakan email lain atau hapus user yang sudah ada terlebih dahulu.`);
+        }
+        
+        // Username conflict only - retry with different username
+        if (conflictErrorData.error === 'Username already exists') {
+          attempt++;
+          lastError = new Error('Username already exists');
+          continue;
+        }
+        
+        // Fallback for other 409 errors
+        lastError = new Error(conflictErrorData.error || 'Conflict error');
+        break;
       } else {
         try { lastError = new Error((await res.json()).error || res.statusText); } catch { lastError = new Error(res.statusText); }
         break;
@@ -239,10 +261,17 @@ export const ApplicationService = {
   // Orchestrate: create user then approve application; returns {application, user}
   async approveAndRegister(application, { username, password }) {
     try {
-      const { user, username: finalUsername } = await this.registerUserFromApplication(application, { username, password });
+      const { user, username: finalUsername, isExisting } = await this.registerUserFromApplication(application, { username, password });
+      
+      // Log if using existing user
+      if (isExisting) {
+        console.log('🔄 Approving application with existing user account');
+      }
+      
       const updatedApp = await this.approveApplication(application.id, { username: finalUsername });
       return { application: updatedApp, user };
-    } catch {
+    } catch (error) {
+      console.error('❌ Approve and register failed:', error);
       // Fallback: local-only (AdminDashboard server users list won't reflect this)
       const apps = await this.getApplications();
       const updated = apps.map(a => a.id === application.id ? { ...a, status: 'approved', processedAt: new Date().toISOString(), username } : a);

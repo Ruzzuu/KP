@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../../componen/Navbar/Navbar";
 import Footer from "../../componen/Footer/Footer";
+import { formatRupiah } from "../../utils/formatCurrency";
 import "./BeasiswaDetail.css";
 
 const BeasiswaDetail = () => {
@@ -249,7 +250,7 @@ const BeasiswaDetail = () => {
               <div className="beasiswa-info-grid">
                 <div className="info-item">
                   <span className="info-label">💰 Dana Beasiswa</span>
-                  <span className="info-value">{beasiswaData.nominal}</span>
+                  <span className="info-value">{formatRupiah(beasiswaData.nominal)}</span>
                 </div>
                 <div className="info-item">
                   <span className="info-label">📅 Periode Pendaftaran</span>
@@ -344,7 +345,7 @@ const BeasiswaDetail = () => {
                 </div>
                 <div className="quick-info-item">
                   <strong>Dana:</strong>
-                  <span>{beasiswaData.nominal}</span>
+                  <span>{formatRupiah(beasiswaData.nominal)}</span>
                 </div>
                 <div className="quick-info-item">
                   <strong>Kategori:</strong>
@@ -369,7 +370,7 @@ const BeasiswaDetail = () => {
                       onClick={() => navigate(`/beasiswa/${related.id}`)}
                     >
                       <h4>{related.judul}</h4>
-                      <p>{related.nominal}</p>
+                      <p>{formatRupiah(related.nominal)}</p>
                       <span className={`mini-status status-${related.status.toLowerCase()}`}>
                         {related.status}
                       </span>
@@ -413,7 +414,7 @@ const BeasiswaDetail = () => {
             <div className="modal-body">
               <div className="beasiswa-info-mini">
                 <h4>{beasiswaData.judul}</h4>
-                <p><strong>Dana:</strong> {beasiswaData.nominal}</p>
+                <p><strong>Dana:</strong> {formatRupiah(beasiswaData.nominal)}</p>
                 <p><strong>Deadline:</strong> {formatDate(beasiswaData.deadline)}</p>
               </div>
 

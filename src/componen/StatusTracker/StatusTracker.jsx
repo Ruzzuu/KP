@@ -6,6 +6,7 @@ import './StatusTracker.css';
 
 const StatusTracker = () => {
   const [ref, isVisible] = useScrollAnimation(0.1);
+  
   // State untuk menyimpan email yang diinput user
   const [email, setEmail] = useState('');
   
@@ -14,114 +15,141 @@ const StatusTracker = () => {
   
   // State untuk menunjukkan loading indicator
   const [loading, setLoading] = useState(false);
+  
+  // State untuk menyimpan error message
+  const [error, setError] = useState('');
+
+  // API Base URL
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
+
+  // Fungsi untuk validasi format email
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   // Fungsi untuk mengecek status pendaftaran berdasarkan email
   const checkStatus = async () => {
-    setLoading(true);    // Tampilkan loading
-    setStatus(null);     // Reset status sebelumnya
+    // Reset error dan status sebelumnya
+    setError('');
+    setStatus(null);
+    
+    // Validasi email kosong
+    if (!email.trim()) {
+      setError('Silakan masukkan email Anda');
+      return;
+    }
+    
+    // Validasi format email
+    if (!isValidEmail(email)) {
+      setError('Format email tidak valid. Contoh: nama@email.com');
+      return;
+    }
+    
+    setLoading(true);
     
     try {
-      // Demo mode: Simulasi delay loading untuk UX yang realistis
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate loading
+      console.log('🔍 Checking status for:', email);
       
-      // Demo responses berdasarkan email yang dimasukkan untuk testing
-      if (email.toLowerCase().includes('demo')) {
-        // Simulasi status approved
+      // Call API endpoint untuk cek status
+      const response = await fetch(`${API_BASE}/check-status/${encodeURIComponent(email)}`);
+      
+      if (!response.ok) {
+        throw new Error('Gagal terhubung ke server. Silakan coba lagi.');
+      }
+      
+      const data = await response.json();
+      
+      console.log('📊 API Response:', data);
+      
+      if (data.success && data.application) {
+        // Email ditemukan - tampilkan status
         setStatus({
-          email: email,
-          status: 'approved',                    // Status: disetujui
-          submittedDate: '2025-01-25',           // Tanggal submit
-          processedDate: '2025-01-26',           // Tanggal diproses
-          message: 'Selamat! Pendaftaran Anda disetujui. Silakan cek email untuk username dan password.'
-        });
-      } else if (email.toLowerCase().includes('pending')) {
-        // Simulasi status pending
-        setStatus({
-          email: email,
-          status: 'pending',                     // Status: menunggu review
-          submittedDate: '2025-01-27',           // Tanggal submit
-          message: 'Pendaftaran Anda sedang diproses oleh admin. Harap tunggu maksimal 2x24 jam.'
-        });
-      } else if (email.toLowerCase().includes('reject')) {
-        // Simulasi status rejected
-        setStatus({
-          email: email,
-          status: 'rejected',                    // Status: ditolak
-          submittedDate: '2025-01-24',           // Tanggal submit
-          processedDate: '2025-01-25',           // Tanggal diproses
-          message: 'Pendaftaran perlu diperbaiki. Silakan cek email untuk detail dan daftar ulang.'
+          email: data.application.email,
+          fullName: data.application.fullName,
+          status: data.application.status,
+          submittedDate: new Date(data.application.submittedAt).toLocaleDateString('id-ID', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          }),
+          processedDate: data.application.processedAt ? 
+            new Date(data.application.processedAt).toLocaleDateString('id-ID', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            }) : null,
+          message: data.message,
+          notes: data.application.notes || '',
+          position: data.application.position,
+          school: data.application.school
         });
       } else {
-        // Try real API call first, fallback to demo
-        // Coba panggil API server untuk data real
-        try {
-          const response = await fetch(`http://localhost:3003/api/check-status/${encodeURIComponent(email)}`);
-          if (response.ok) {
-            const data = await response.json();
-            
-            // Jika API berhasil dan ada data aplikasi
-            if (data.success && data.application) {
-              setStatus({
-                email: email,
-                status: data.application.status,
-                submittedDate: new Date(data.application.submittedAt).toLocaleDateString('id-ID'),
-                processedDate: data.application.processedAt ? 
-                  new Date(data.application.processedAt).toLocaleDateString('id-ID') : null,
-                message: data.application.message
-              });
-            } else {
-              throw new Error('Not found in API');
-            }
-          } else {
-            throw new Error('API not available');
-          }
-        } catch (apiError) {
-          // Fallback to demo response
-          setStatus({
-            email: email,
-            status: 'not_found',
-            submittedDate: '-',
-            message: '📧 Demo Mode: Coba email dengan kata "demo", "pending", atau "reject" untuk melihat status berbeda. Contoh: demo@test.com'
-          });
-        }
+        // Email tidak ditemukan
+        setStatus({
+          email: email,
+          status: 'not_found',
+          submittedDate: '-',
+          message: data.message || 'Email tidak terdaftar dalam sistem kami. Pastikan Anda telah melakukan pendaftaran.'
+        });
       }
-    } catch (error) {
-      console.error('Error checking status:', error);
-      setStatus({
-        email: email,
-        status: 'error',
-        submittedDate: '-',
-        message: 'Terjadi kesalahan saat mengecek status. Silakan coba lagi nanti atau hubungi admin.'
-      });
+    } catch (err) {
+      console.error('❌ Error checking status:', err);
+      setError(err.message || 'Terjadi kesalahan saat mengecek status. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fungsi untuk handle Enter key press
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && email.trim() && !loading) {
+      checkStatus();
+    }
+  };
+
+  // Fungsi untuk reset form
+  const resetForm = () => {
+    setEmail('');
+    setStatus(null);
+    setError('');
   };
 
   return (
     <div className={`status-tracker ${isVisible ? 'animate-in' : ''}`} ref={ref}>
       <div className="tracker-header">
         <h2>🔍 Cek Status Pendaftaran</h2>
-        <p>Masukkan email yang Anda gunakan saat mendaftar</p>
+        <p>Masukkan email yang Anda gunakan saat mendaftar untuk mengecek status pendaftaran</p>
       </div>
 
       <div className="tracker-form">
         <input
           type="email"
-          placeholder="Masukkan email Anda"
+          placeholder="Masukkan email Anda (contoh: nama@email.com)"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          onKeyPress={handleKeyPress}
           className="email-input"
+          disabled={loading}
         />
         <button 
           onClick={checkStatus}
-          disabled={!email || loading}
+          disabled={!email.trim() || loading}
           className="check-btn"
         >
-          {loading ? 'Mengecek...' : 'Cek Status'}
+          {loading ? '⏳ Mengecek...' : '🔍 Cek Status'}
         </button>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="error-message">
+          <span className="error-icon">⚠️</span>
+          <p>{error}</p>
+        </div>
+      )}
+
+      {/* Status Result */}
       {status && (
         <div className={`status-result ${status.status}`}>
           <div className="status-header">
@@ -142,49 +170,99 @@ const StatusTracker = () => {
           </div>
           
           <div className="status-details">
+            {status.fullName && (
+              <p><strong>Nama:</strong> {status.fullName}</p>
+            )}
             <p><strong>Email:</strong> {status.email}</p>
-            <p><strong>Tanggal Daftar:</strong> {status.submittedDate}</p>
+            {status.position && status.position !== 'N/A' && (
+              <p><strong>Posisi:</strong> {status.position}</p>
+            )}
+            {status.school && status.school !== 'N/A' && (
+              <p><strong>Sekolah:</strong> {status.school}</p>
+            )}
+            <p><strong>Tanggal Pendaftaran:</strong> {status.submittedDate}</p>
             {status.processedDate && (
               <p><strong>Tanggal Diproses:</strong> {status.processedDate}</p>
             )}
             <p><strong>Pesan:</strong> {status.message}</p>
+            {status.notes && status.notes.trim() !== '' && (
+              <p><strong>Catatan Admin:</strong> {status.notes}</p>
+            )}
           </div>
 
+          {/* Action buttons based on status */}
           {status.status === 'approved' && (
-            <div className="next-steps">
-              <h4>📧 Langkah Selanjutnya:</h4>
+            <div className="next-steps success-steps">
+              <h4>🎉 Langkah Selanjutnya:</h4>
               <ul>
-                <li>Cek email Anda untuk username & password</li>
-                <li>Login menggunakan credentials yang dikirim</li>
-                <li>Mulai download sertifikat di dashboard</li>
+                <li>✅ Cek email Anda untuk username & password</li>
+                <li>🔐 Login menggunakan credentials yang dikirim</li>
+                <li>📥 Mulai download sertifikat di dashboard</li>
               </ul>
-              <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-                <a href="/login" className="login-link">
+              <div className="action-buttons">
+                <a href="/login" className="btn-action btn-primary">
                   🚀 Login Sekarang
                 </a>
+                <button onClick={resetForm} className="btn-action btn-secondary">
+                  🔄 Cek Email Lain
+                </button>
+              </div>
+            </div>
+          )}
+
+          {status.status === 'pending' && (
+            <div className="next-steps warning-steps">
+              <h4>⏳ Harap Bersabar:</h4>
+              <ul>
+                <li>📋 Pendaftaran Anda sedang direview admin</li>
+                <li>⏰ Maksimal 2x24 jam untuk konfirmasi</li>
+                <li>📧 Anda akan menerima email setelah diproses</li>
+                <li>📞 Hubungi admin jika lebih dari 2 hari</li>
+              </ul>
+              <div className="action-buttons">
+                <button onClick={resetForm} className="btn-action btn-secondary">
+                  � Cek Email Lain
+                </button>
               </div>
             </div>
           )}
 
           {status.status === 'not_found' && (
-            <div className="next-steps">
+            <div className="next-steps info-steps">
               <h4>📝 Apa yang harus dilakukan:</h4>
               <ul>
-                <li>Pastikan email yang dimasukkan benar</li>
-                <li>Jika belum daftar, silakan isi form pendaftaran</li>
-                <li>Hubungi admin jika yakin sudah mendaftar</li>
+                <li>✉️ Pastikan email yang dimasukkan benar</li>
+                <li>📝 Jika belum daftar, silakan isi form pendaftaran</li>
+                <li>📞 Hubungi admin jika yakin sudah mendaftar</li>
               </ul>
+              <div className="action-buttons">
+                <a href="/daftar" className="btn-action btn-primary">
+                  📝 Daftar Sekarang
+                </a>
+                <button onClick={resetForm} className="btn-action btn-secondary">
+                  🔄 Coba Email Lain
+                </button>
+              </div>
             </div>
           )}
 
           {status.status === 'rejected' && (
-            <div className="next-steps">
+            <div className="next-steps error-steps">
               <h4>🔄 Langkah Selanjutnya:</h4>
               <ul>
-                <li>Cek email untuk detail alasan penolakan</li>
-                <li>Perbaiki data sesuai saran admin</li>
-                <li>Daftar ulang dengan data yang sudah diperbaiki</li>
+                <li>📧 Cek email untuk detail alasan penolakan</li>
+                <li>✏️ Perbaiki data sesuai saran admin</li>
+                <li>📝 Daftar ulang dengan data yang sudah diperbaiki</li>
+                <li>📞 Hubungi admin jika ada yang kurang jelas</li>
               </ul>
+              <div className="action-buttons">
+                <a href="/daftar" className="btn-action btn-primary">
+                  📝 Daftar Ulang
+                </a>
+                <button onClick={resetForm} className="btn-action btn-secondary">
+                  🔄 Cek Email Lain
+                </button>
+              </div>
             </div>
           )}
         </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './BeasiswaManager.css';
+import { formatRupiah, formatNominalInput } from '../../utils/formatCurrency';
 
 // ===== BEASISWA MANAGER COMPONENT =====
 // Component untuk admin mengelola beasiswa (CRUD operations)
@@ -60,10 +61,20 @@ const BeasiswaManager = () => {
   // Function untuk handle input change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Jika field nominal, format otomatis dengan separator titik
+    if (name === 'nominal') {
+      const formatted = formatNominalInput(value);
+      setFormData(prev => ({
+        ...prev,
+        [name]: formatted
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   // Function untuk handle persyaratan change
@@ -400,7 +411,7 @@ const BeasiswaManager = () => {
                       {item.status}
                     </span>
                   </div>
-                  <div className="beasiswa-nominal">{item.nominal}</div>
+                  <div className="beasiswa-nominal">{formatRupiah(item.nominal)}</div>
                 </div>
                 
                 <div className="card-meta">

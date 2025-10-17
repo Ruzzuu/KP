@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'; // Tambahkan useState dan us
 import { useNavigate } from 'react-router-dom'; // Tambahkan useNavigate untuk navigation
 import Navbar from "../../componen/Navbar/Navbar";
 import Footer from "../../componen/Footer/Footer";
+import { formatRupiah } from "../../utils/formatCurrency";
 import './beasiswa_page.css';
 
 const Beasiswa = () => {
@@ -236,7 +237,7 @@ const Beasiswa = () => {
               <div className="card" key={beasiswa.id}>
                 <div className="card-header">
                   <h3>{beasiswa.judul}</h3>
-                  <p>{beasiswa.nominal}</p>
+                  <p>{formatRupiah(beasiswa.nominal)}</p>
                 </div>
                 <div className="card-status">
                   <span className={`status-${beasiswa.status.toLowerCase()}`}>
@@ -326,7 +327,7 @@ const Beasiswa = () => {
             <div className="modal-body">
               <div className="beasiswa-info">
                 <h4>{selectedBeasiswa.judul}</h4>
-                <p><strong>Dana:</strong> {selectedBeasiswa.nominal}</p>
+                <p><strong>Dana:</strong> {formatRupiah(selectedBeasiswa.nominal)}</p>
                 <p><strong>Deadline:</strong> {new Date(selectedBeasiswa.deadline).toLocaleDateString('id-ID')}</p>
                 <p><strong>Status:</strong> 
                   <span className={`status-${selectedBeasiswa.status.toLowerCase()}`}>

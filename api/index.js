@@ -83,7 +83,7 @@ const corsOptions = {
   },
   credentials: true,
   optionsSuccessStatus: 200, // Support legacy browsers
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // ✅ Added PATCH
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'expires', 'cache-control', 'x-requested-with'],
   maxAge: 86400 // Cache preflight for 24 hours
 };
@@ -442,10 +442,30 @@ app.post('/api/auth/register', async (req, res) => {
   const db = readDB();
   const { email, password, fullName, username } = req.body;
   
-  // Check if user already exists
-  const existingUser = db.users.find(u => u.email === email || u.username === username);
-  if (existingUser) {
-    return res.status(400).json({ error: 'User already exists' });
+  // NEW LOGIC: Block registration if email already exists (no update allowed)
+  const registeredEmailCheck = db.users.find(u => u.email === email);
+  if (registeredEmailCheck) {
+    console.log('❌ Registration blocked: Email already registered:', email);
+    return res.status(409).json({ 
+      error: 'Email already registered',
+      message: 'This email is already in use. Please use a different email address.',
+      type: 'EMAIL_ALREADY_EXISTS'
+    });
+  }
+  
+  // Check if USERNAME already exists (different from email check)
+  const existingUserByUsername = db.users.find(u => u.username === username);
+  if (existingUserByUsername) {
+    // Username conflict - let frontend retry with different username
+    return res.status(409).json({ 
+      error: 'Username already exists',
+      existingUser: {
+        id: existingUserByUsername.id,
+        email: existingUserByUsername.email,
+        username: existingUserByUsername.username,
+        fullName: existingUserByUsername.fullName
+      }
+    });
   }
   
   // Hash password
@@ -798,10 +818,102 @@ app.delete('/api/applications/:id', (req, res) => {
   
   if (writeDB(db)) {
     console.log(`🗑️ Application ${req.params.id} deleted successfully`);
-    res.status(204).send(); // 204 No Content for successful deletion
+    res.json({ success: true, message: 'Application deleted' });
   } else {
     res.status(500).json({ error: 'Failed to delete application' });
   }
+});
+
+// PATCH /api/applications/:id - Update application (for approve/reject with notes)
+app.patch('/api/applications/:id', (req, res) => {
+  const db = readDB();
+  const appIndex = db.applications.findIndex(app => app.id === req.params.id);
+  
+  if (appIndex === -1) {
+    return res.status(404).json({ error: 'Application not found' });
+  }
+  
+  // Update application with new data
+  const updatedApp = {
+    ...db.applications[appIndex],
+    ...req.body,
+    processedAt: new Date().toISOString()
+  };
+  
+  db.applications[appIndex] = updatedApp;
+  
+  if (writeDB(db)) {
+    console.log(`✅ Application ${req.params.id} updated:`, req.body.status || 'data updated');
+    
+    // Broadcast real-time update
+    broadcastToClients('application-updated', updatedApp);
+    
+    res.json(updatedApp);
+  } else {
+    res.status(500).json({ error: 'Failed to update application' });
+  }
+});
+
+// ===== STATUS CHECK ENDPOINT =====
+// GET /api/check-status/:email - Check application status by email (public endpoint)
+app.get('/api/check-status/:email', (req, res) => {
+  const db = readDB();
+  const email = decodeURIComponent(req.params.email).toLowerCase().trim();
+  
+  console.log(`🔍 Checking application status for email: ${email}`);
+  
+  // Search for application by email (case-insensitive)
+  const application = (db.applications || []).find(
+    app => app.email && app.email.toLowerCase().trim() === email
+  );
+  
+  if (!application) {
+    console.log(`❌ No application found for email: ${email}`);
+    return res.json({
+      success: false,
+      message: 'Email tidak terdaftar dalam sistem',
+      application: null
+    });
+  }
+  
+  // Generate status message based on application status
+  let statusMessage = '';
+  switch (application.status) {
+    case 'pending':
+      statusMessage = 'Pendaftaran Anda sedang diproses oleh admin. Harap tunggu maksimal 2x24 jam untuk konfirmasi.';
+      break;
+    case 'approved':
+      statusMessage = 'Selamat! Pendaftaran Anda telah disetujui. Silakan cek email untuk username dan password login.';
+      break;
+    case 'rejected':
+      statusMessage = 'Pendaftaran Anda perlu diperbaiki. Silakan cek email untuk detail dan daftar ulang dengan data yang benar.';
+      break;
+    default:
+      statusMessage = 'Status pendaftaran Anda sedang dalam review.';
+  }
+  
+  console.log(`✅ Application found - Status: ${application.status}`);
+  
+  res.json({
+    success: true,
+    message: statusMessage,
+    application: {
+      id: application.id,
+      fullName: application.fullName,
+      email: application.email,
+      phone: application.phone,
+      position: application.position || 'N/A',
+      school: application.school || 'N/A',
+      status: application.status,
+      submittedAt: application.submittedAt,
+      processedAt: application.processedAt || null,
+      notes: application.notes || '',
+      // Hide sensitive data
+      credentials: undefined,
+      pw: undefined,
+      pc: undefined
+    }
+  });
 });
 
 // ===== USER MANAGEMENT ENDPOINTS =====

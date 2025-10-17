@@ -58,6 +58,41 @@
   border: 2px solid #e5e7eb;
   border-radius: 8px;
   font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.email-input:focus {
+  outline: none;
+  border-color: #1e7e34;
+  box-shadow: 0 0 0 3px rgba(30, 126, 52, 0.1);
+}
+
+.email-input:disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
+}
+
+/* Error Message Styling */
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  color: #dc2626;
+}
+
+.error-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.error-message p {
+  margin: 0;
+  font-weight: 500;
 }
 
 .check-btn {
@@ -129,18 +164,90 @@
 
 .next-steps {
   margin-top: 1rem;
-  padding: 1rem;
+  padding: 1.5rem;
   background: rgba(255, 255, 255, 0.5);
-  border-radius: 6px;
+  border-radius: 8px;
+}
+
+.next-steps h4 {
+  margin: 0 0 1rem 0;
+  color: #1f2937;
 }
 
 .next-steps ul {
-  margin: 0.5rem 0;
+  margin: 0.5rem 0 1rem 0;
   padding-left: 1.5rem;
 }
 
 .next-steps li {
-  margin: 0.25rem 0;
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+
+/* Next Steps Variants */
+.success-steps {
+  background: rgba(16, 185, 129, 0.05);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.warning-steps {
+  background: rgba(245, 158, 11, 0.05);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.info-steps {
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.error-steps {
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-action {
+  flex: 1;
+  min-width: 150px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.btn-primary {
+  background: #1e7e34;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #166534;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(30, 126, 52, 0.3);
+}
+
+.btn-secondary {
+  background: white;
+  color: #1e7e34;
+  border: 2px solid #1e7e34;
+}
+
+.btn-secondary:hover {
+  background: #f0fdf4;
+  transform: translateY(-2px);
 }
 
 .login-link {
@@ -157,4 +264,28 @@
 .login-link:hover {
   background: #0f7536;
   transform: translateY(-1px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .status-tracker {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+
+  .tracker-form {
+    flex-direction: column;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .btn-action {
+    width: 100%;
+  }
+
+  .status-details p {
+    font-size: 0.9rem;
+  }
 }

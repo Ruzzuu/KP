@@ -251,6 +251,20 @@
       "lastDownload": null,
       "downloadHistory": [],
       "profileImage": "https://ui-avatars.com/api/?name=fairuz&background=0F7536&color=fff"
+    },
+    {
+      "id": "1760685384451",
+      "fullName": "joko",
+      "email": "dwad@gmail.com",
+      "username": "joko_699",
+      "password": "$2b$10$R7uviqJIkZFjlyTETAXWW.DfK8km0mvFXFwVxvC7PWTz.2HxXn09m",
+      "createdAt": "2025-10-17T07:16:24.451Z",
+      "role": "user",
+      "certificates": [],
+      "downloads": 0,
+      "lastDownload": null,
+      "downloadHistory": [],
+      "profileImage": "https://ui-avatars.com/api/?name=joko&background=0F7536&color=fff"
     }
   ],
   "news": [
@@ -534,6 +548,24 @@
       "userId": "2",
       "createdAt": "2025-10-11T03:42:31.786Z",
       "expiresAt": "2025-10-12T03:42:31.786Z"
+    },
+    {
+      "id": "17606854488130.nq6669agb2i",
+      "userId": "1760685384451",
+      "createdAt": "2025-10-17T07:17:28.813Z",
+      "expiresAt": "2025-10-18T07:17:28.813Z"
+    },
+    {
+      "id": "17606854692320.dhqioxpor5a",
+      "userId": "bdef",
+      "createdAt": "2025-10-17T07:17:49.232Z",
+      "expiresAt": "2025-10-18T07:17:49.232Z"
+    },
+    {
+      "id": "17606854795660.hma89bmgkdq",
+      "userId": "2",
+      "createdAt": "2025-10-17T07:17:59.566Z",
+      "expiresAt": "2025-10-18T07:17:59.566Z"
     }
   ],
   "applications": [
@@ -562,12 +594,13 @@
       "pc": "ff",
       "experience": "< 1 tahun",
       "education": "S1",
-      "status": "pending",
+      "status": "approved",
       "submittedAt": "2025-08-08T01:04:18.252Z",
-      "processedAt": null,
+      "processedAt": "2025-10-17T07:06:34.106Z",
       "credentials": null,
       "createdAt": "2025-08-08T01:04:18.282Z",
-      "updatedAt": "2025-08-08T01:04:18.282Z"
+      "updatedAt": "2025-08-08T01:04:18.282Z",
+      "username": "eko_69"
     },
     {
       "id": "1754654201849",
@@ -580,12 +613,13 @@
       "pc": "w",
       "experience": "< 1 tahun",
       "education": "S1",
-      "status": "pending",
+      "status": "approved",
       "submittedAt": "2025-08-08T11:56:41.849Z",
-      "processedAt": null,
+      "processedAt": "2025-10-17T07:16:24.476Z",
       "credentials": null,
       "createdAt": "2025-08-08T11:56:41.904Z",
-      "updatedAt": "2025-08-08T11:56:41.904Z"
+      "updatedAt": "2025-08-08T11:56:41.904Z",
+      "username": "joko_699"
     },
     {
       "id": "1754657450651",
@@ -598,12 +632,13 @@
       "pc": "w",
       "experience": "< 1 tahun",
       "education": "S1",
-      "status": "pending",
+      "status": "rejected",
       "submittedAt": "2025-08-08T12:50:50.651Z",
-      "processedAt": null,
+      "processedAt": "2025-10-17T07:15:42.143Z",
       "credentials": null,
       "createdAt": "2025-08-08T12:50:50.705Z",
-      "updatedAt": "2025-08-08T12:50:50.705Z"
+      "updatedAt": "2025-08-08T12:50:50.705Z",
+      "rejectionReason": "prank"
     },
     {
       "id": "1754772129490",
@@ -616,12 +651,13 @@
       "pc": "dw",
       "experience": "< 1 tahun",
       "education": "S1",
-      "status": "pending",
+      "status": "rejected",
       "submittedAt": "2025-08-09T20:42:09.490Z",
-      "processedAt": null,
+      "processedAt": "2025-10-17T07:15:30.779Z",
       "credentials": null,
       "createdAt": "2025-08-09T20:42:09.535Z",
-      "updatedAt": "2025-08-09T20:42:09.535Z"
+      "updatedAt": "2025-08-09T20:42:09.535Z",
+      "rejectionReason": "prank"
     }
   ],
   "beasiswa": [
@@ -717,10 +753,10 @@
     {
       "id": "1758714842513",
       "judul": "Pendidikan S1",
-      "nominal": "2000000",
+      "nominal": "3.000.000",
       "deadline": "2025-11-10",
-      "tanggal_mulai": "2025-10-30",
-      "status": "Segera",
+      "tanggal_mulai": "2025-10-15",
+      "status": "Buka",
       "deskripsi": "beasiswa untuk menjenjang pendidikan S1",
       "persyaratan": [
         "Teknik Informatika",
@@ -729,7 +765,7 @@
       ],
       "kategori": "S1",
       "createdAt": "2025-09-24T11:54:02.513Z",
-      "updatedAt": "2025-09-24T11:54:49.035Z"
+      "updatedAt": "2025-10-16T16:34:50.348Z"
     }
   ],
   "statistics": {
