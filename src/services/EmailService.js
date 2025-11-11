@@ -395,19 +395,32 @@ class EmailService {
       let errorCategory = 'unknown';
       let troubleshootTips = [];
       
-      if (error.message.includes('timeout')) {
+      const errorMsg = error.message || error.text || '';
+      
+      if (errorMsg.includes('timeout')) {
         errorCategory = 'timeout';
         troubleshootTips = [
           'Check your internet connection',
           'EmailJS service might be slow',
           'Try increasing timeout value'
         ];
-      } else if (error.message.includes('network') || error.message.includes('fetch')) {
+      } else if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
         errorCategory = 'network';
         troubleshootTips = [
           'Check internet connection',
           'Verify firewall/antivirus settings',
           'Check if EmailJS domain is blocked'
+        ];
+      } else if (error.status === 412) {
+        errorCategory = 'gmail_reconnect';
+        troubleshootTips = [
+          '⚠️ URGENT: Gmail connection expired!',
+          '1. Go to https://dashboard.emailjs.com/',
+          '2. Click "Email Services"',
+          '3. Select service: service_ublbpnp',
+          '4. Click "Reconnect Gmail"',
+          '5. Authorize EmailJS again',
+          'Error: ' + (error.text || 'Invalid grant')
         ];
       } else if (error.status === 400) {
         errorCategory = 'bad_request';

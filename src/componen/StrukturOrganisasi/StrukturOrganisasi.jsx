@@ -1,8 +1,10 @@
 // StrukturOrganisasi.jsx - Section Departemen-Departemen PERGUNU
 import React from 'react';
 import './struktur-organisasi.css';
+import { useScrollAnimation } from '../../hooks/useScrollAnimation';
 
 const StrukturOrganisasi = () => {
+  const [ref, isVisible] = useScrollAnimation();
   // Fungsi untuk konfirmasi sebelum download
   const handleDownload = (fileName, documentName) => {
     const confirmed = window.confirm(
@@ -72,7 +74,11 @@ const StrukturOrganisasi = () => {
   ];
 
   return (
-    <section className="struktur-organisasi" id="struktur-organisasi">
+    <section 
+      className={`struktur-organisasi ${isVisible ? 'animate' : ''}`} 
+      id="struktur-organisasi"
+      ref={ref}
+    >
       <div className="container">
         {/* Header Section */}
         <div className="struktur-header">

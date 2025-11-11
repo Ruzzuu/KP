@@ -42,3 +42,17 @@ public/uploads/
 # Log files
 logs/
 *.log
+
+# API Database (production akan gunakan database eksternal)
+api/db.json
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# OS specific
+Thumbs.db
+
+# Vercel
+.vercel

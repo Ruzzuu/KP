@@ -1197,7 +1197,6 @@ const AdminDashboard = () => {
               onClick={handleLogout}
               title="Keluar dari Admin Dashboard"
             >
-              <span>🚪</span>
               Logout
             </button>
           </div>
@@ -1230,7 +1229,7 @@ const AdminDashboard = () => {
             className={`nav-item ${activeTab === 'applications' ? 'active' : ''}`}
             onClick={() => setActiveTab('applications')}
           >
-            📝 Applications
+            Applications
           </button>
           <button
             className={`nav-item ${activeTab === 'certificates' ? 'active' : ''}`}
@@ -1248,13 +1247,13 @@ const AdminDashboard = () => {
             className={`nav-item ${activeTab === 'news' ? 'active' : ''}`}
             onClick={() => setActiveTab('news')}
           >
-            📰 News
+            News
           </button>
           <button
             className={`nav-item ${activeTab === 'beasiswa' ? 'active' : ''}`}
             onClick={() => setActiveTab('beasiswa')}
           >
-            🎓 Beasiswa
+            Beasiswa
           </button>
         </div>
       </nav>

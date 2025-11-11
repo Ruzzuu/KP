@@ -15,6 +15,9 @@
 .struktur-header {
   text-align: center;
   margin-bottom: 60px;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s ease-out;
 }
 
 /* Menggunakan style yang sama dengan Tentang section */
@@ -45,6 +48,91 @@
   margin-top: 5px;
 }
 
+/* === SCROLL ANIMATIONS === */
+/* Header animation */
+.struktur-organisasi.animate .struktur-header {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.1s;
+}
+
+/* Departemen cards animation - staggered delay for each card */
+.struktur-organisasi.animate .departemen-card:nth-child(1) {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.2s;
+}
+
+.struktur-organisasi.animate .departemen-card:nth-child(2) {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.3s;
+}
+
+.struktur-organisasi.animate .departemen-card:nth-child(3) {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.4s;
+}
+
+.struktur-organisasi.animate .departemen-card:nth-child(4) {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.5s;
+}
+
+.struktur-organisasi.animate .departemen-card:nth-child(5) {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.6s;
+}
+
+.struktur-organisasi.animate .departemen-card:nth-child(6) {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.7s;
+}
+
+.struktur-organisasi.animate .departemen-card:nth-child(7) {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.8s;
+}
+
+.struktur-organisasi.animate .departemen-card:nth-child(8) {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.9s;
+}
+
+.struktur-organisasi.animate .departemen-card:nth-child(9) {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 1.0s;
+}
+
+/* Download section animation */
+.struktur-reference,
+.struktur-downloads {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s ease-out;
+}
+
+.struktur-organisasi.animate .struktur-reference {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 1.1s;
+}
+
+.struktur-organisasi.animate .struktur-downloads {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 1.2s;
+}
+
+/* === END SCROLL ANIMATIONS === */
+
 /* Departemen Grid */
 .departemen-grid {
   display: grid;
@@ -61,13 +149,20 @@
   display: flex;
   align-items: flex-start;
   gap: 16px;
-  transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  opacity: 0;
+  transform: translateY(50px);
+  transition: all 0.6s ease-out;
 }
 
 .departemen-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 16px rgba(22, 101, 52, 0.15);
+}
+
+/* When animated, preserve hover state */
+.struktur-organisasi.animate .departemen-card:hover {
+  transform: translateY(-5px);
 }
 
 /* Number Circle */

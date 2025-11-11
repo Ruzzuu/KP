@@ -61,7 +61,9 @@ const corsOptions = {
       const allowList = new Set([
         ...allowedOrigins,
         process.env.FRONTEND_URL,
-        'https://your-frontend-domain.vercel.app' // Replace with actual domain
+        // ⚠️ AFTER DEPLOYMENT: Update this with your actual Vercel URL
+        // Example: 'https://your-project.vercel.app'
+        // You can set this in ALLOWED_ORIGINS environment variable instead
       ].filter(Boolean));
       
       if (allowList.has(origin)) {

@@ -442,12 +442,14 @@ app.listen(PORT, 'localhost', (err) => {
       req.on('error', (err) => {
         console.error('❌ Self-test failed:', err.message);
       });
-      req.setTimeout(5000, () => {
+      req.setTimeout(10000, () => {
         req.destroy();
         console.error('❌ Self-test timeout');
       });
+    }).catch(err => {
+      console.error('❌ Self-test module error:', err.message);
     });
-  }, 1000);
+  }, 2000);
 });
 
 export default app;

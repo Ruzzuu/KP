@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import "./NewsDetail.css"; // Using shared styles
 import SidebarWidget from "../../componen/SidebarWidget";
 import { useNewsImage } from "../../context/NewsImageContext";
+import { getExcerpt } from "../../utils/htmlUtils";
 import Berita1Img from "../../assets/Berita1.png";
 import Berita2Img from "../../assets/Berita2.png";
 import Berita3Img from "../../assets/Berita3.png";
@@ -325,7 +326,7 @@ const NewsDetail = () => {
             />
             <div className="modal-caption">
               <h4>{newsData.title}</h4>
-              <p>{newsData.summary || newsData.content.substring(0, 200) + '...'}</p>
+              <p>{newsData.summary || getExcerpt(newsData.content, 200)}</p>
             </div>
           </div>
         </div>

@@ -28,12 +28,18 @@
   background: #0d5e2a;
 }
 
-.admin-news-grid{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:16px}
+.admin-news-grid{
+  display:grid;
+  grid-template-columns:repeat(1,minmax(0,1fr));
+  gap:16px;
+  align-items: stretch; /* Ensure all grid items stretch to same height */
+}
 @media (min-width:640px){.admin-news-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (min-width:1024px){.admin-news-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (min-width:1280px){.admin-news-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 
 /* Admin news card styling - Higher specificity to prevent conflicts */
+/* Using Flexbox to ensure equal height cards and aligned action buttons */
 .admin-news-grid .admin-news-card {
   border: 1px solid #e5e7eb !important;
   border-radius: 10px !important;
@@ -42,6 +48,11 @@
   box-shadow: 0 1px 2px rgba(0,0,0,.04) !important;
   transition: all 0.2s ease;
   font-family: 'Poppins', sans-serif !important;
+  
+  /* Flexbox layout for equal height and aligned buttons */
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important; /* Make card fill grid cell height */
 }
 
 .admin-news-grid .admin-news-card:hover {
@@ -55,6 +66,7 @@
   justify-content: space-between !important;
   gap: 8px !important;
   margin-bottom: 6px !important;
+  flex-shrink: 0 !important; /* Prevent header from shrinking */
 }
 
 .admin-news-grid .admin-news-card__title {
@@ -63,6 +75,7 @@
   margin: 0 !important;
   color: #111827 !important;
   line-height: 1.4 !important;
+  flex: 1 !important; /* Allow title to take available space */
 }
 
 .admin-news-grid .admin-news-card__category {
@@ -72,6 +85,8 @@
   padding: 2px 8px !important;
   border-radius: 999px !important;
   font-weight: 500 !important;
+  flex-shrink: 0 !important; /* Prevent category badge from shrinking */
+  white-space: nowrap !important; /* Keep text in one line */
 }
 
 .admin-news-grid .admin-news-card__meta {
@@ -80,6 +95,8 @@
   color: #555 !important;
   font-size: .85rem !important;
   margin-bottom: 6px !important;
+  flex-shrink: 0 !important; /* Prevent meta from shrinking */
+  flex-wrap: wrap !important; /* Allow wrapping on small screens */
 }
 
 .admin-news-grid .admin-news-card__content {
@@ -87,6 +104,7 @@
   font-size: .95rem !important;
   margin-bottom: 8px !important;
   line-height: 1.5 !important;
+  flex-grow: 1 !important; /* Allow content to grow and fill space */
 }
 
 .admin-news-grid .admin-news-card__actions {
@@ -94,6 +112,8 @@
   gap: 8px !important;
   flex-wrap: wrap !important;
   align-items: center !important;
+  margin-top: auto !important; /* Push actions to the bottom of the card */
+  padding-top: 8px !important; /* Add some spacing from content */
 }
 
 .admin-news-grid .admin-news-card__badge {
@@ -751,6 +771,7 @@
   border-radius: 8px;
   margin-bottom: 12px;
   background: #f3f4f6;
+  flex-shrink: 0; /* Prevent image from shrinking in flex layout */
 }
 
 .admin-card-cover {

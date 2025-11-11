@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 import './NewsManager.css';
+import { stripHtmlTags, getExcerpt } from '../../utils/htmlUtils';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 
@@ -837,7 +838,7 @@ export default function NewsManager() {
                   <span>📅 {formatDate(news.createdAt)}</span>
                 </div>
                 <div className="admin-news-card__content">
-                  {news.content.substring(0, 150)}...
+                  {getExcerpt(news.content, 150)}
                 </div>
                 <div className="admin-news-card__actions">
                   {news.featured && (
