@@ -11,6 +11,19 @@ export default defineConfig({
     react() // Enable React support dengan fast refresh dan JSX transform
   ],
   
+  // Build optimization
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'icons': ['react-icons'],
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000,
+  },
+  
   // Konfigurasi CSS processing
   css: {
     postcss: {
