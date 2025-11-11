@@ -38,6 +38,8 @@ db.json.backup
 # Upload files
 uploads/
 public/uploads/
+# BUT allow public/uploads/images for Vercel deployment
+!public/uploads/images/
 
 # Log files
 logs/
