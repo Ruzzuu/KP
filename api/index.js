@@ -1010,18 +1010,22 @@ app.get('/api/health', (req, res) => {
 });
 
 // ===== SERVER START =====
-app.listen(PORT, () => {
-  console.log('🚀 ===== PERGUNU API SERVER STARTED =====');
-  console.log(`📡 Server running on http://localhost:${PORT}`);
-  console.log(`🔔 SSE endpoint: http://localhost:${PORT}/api/news/events`);
-  console.log('📰 News API endpoints:');
-  console.log('  GET /api/news - Get all news');
-  console.log('  GET /api/news/:id - Get news by ID');
-  console.log('  POST /api/news - Create new news');
-  console.log('  PUT /api/news/:id - Update news');
-  console.log('  DELETE /api/news/:id - Delete news');
-  console.log('  PUT /api/news/:id/feature - Set as featured');
-  console.log('🌟 Ready to serve!');
-});
+// Only start server in local development (not on Vercel)
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log('🚀 ===== PERGUNU API SERVER STARTED =====');
+    console.log(`📡 Server running on http://localhost:${PORT}`);
+    console.log(`🔔 SSE endpoint: http://localhost:${PORT}/api/news/events`);
+    console.log('📰 News API endpoints:');
+    console.log('  GET /api/news - Get all news');
+    console.log('  GET /api/news/:id - Get news by ID');
+    console.log('  POST /api/news - Create new news');
+    console.log('  PUT /api/news/:id - Update news');
+    console.log('  DELETE /api/news/:id - Delete news');
+    console.log('  PUT /api/news/:id/feature - Set as featured');
+    console.log('🌟 Ready to serve!');
+  });
+}
 
+// Export for Vercel serverless function
 export default app;
