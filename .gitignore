@@ -46,7 +46,8 @@ logs/
 *.log
 
 # API Database (production akan gunakan database eksternal)
-api/db.json
+# TEMPORARILY ALLOW api/db.json for Vercel deployment
+# api/db.json
 
 # Temporary files
 *.tmp
