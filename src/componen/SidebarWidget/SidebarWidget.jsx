@@ -58,7 +58,8 @@ const SidebarWidget = ({
   };
 
   // API Base URL
-  const API_BASE = 'http://localhost:3001/api';
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://kp-mocha.vercel.app/api';
+  const FILE_SERVER = import.meta.env.VITE_FILE_SERVER_URL || 'https://kp-mocha.vercel.app';
 
   // Format tanggal
   const formatDate = (dateString) => {
@@ -100,18 +101,22 @@ const SidebarWidget = ({
     }
     
     // Handle file server URLs (sudah lengkap)
-    if (imageUrl.startsWith('http://localhost:3002/uploads/')) {
-      return imageUrl;
+    if (imageUrl.includes('/uploads/')) {
+      // If it already has a full URL, use it; otherwise construct it
+      if (imageUrl.startsWith('http')) {
+        return imageUrl;
+      }
+      return imageUrl.startsWith('/') ? `${FILE_SERVER}${imageUrl}` : `${FILE_SERVER}/uploads/images/${imageUrl}`;
     }
     
     // Handle filename only - convert ke file server URL
     if (imageUrl && !imageUrl.includes('/') && !imageUrl.startsWith('http') && !imageUrl.startsWith('/src/')) {
-      return `http://localhost:3002/uploads/images/${imageUrl}`;
+      return `${FILE_SERVER}/uploads/images/${imageUrl}`;
     }
     
     // Handle path starting with /uploads - convert ke file server URL
     if (imageUrl.startsWith('/uploads/')) {
-      return `http://localhost:3002${imageUrl}`;
+      return `${FILE_SERVER}${imageUrl}`;
     }
     
     // Cek apakah sudah ada mapping untuk asset images

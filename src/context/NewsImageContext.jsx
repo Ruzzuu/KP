@@ -36,7 +36,10 @@ export const NewsImageProvider = ({ children }) => {
   // Fungsi untuk check dan update featured image dari API
   const checkAndUpdateFeaturedImage = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/news');
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://kp-mocha.vercel.app/api';
+      const FILE_SERVER = import.meta.env.VITE_FILE_SERVER_URL || 'https://kp-mocha.vercel.app';
+      
+      const response = await fetch(`${API_BASE}/news`);
       if (response.ok) {
         const allNews = await response.json();
         const featuredNews = allNews.find(news => news.featured);
@@ -46,10 +49,10 @@ export const NewsImageProvider = ({ children }) => {
           let imageUrl = featuredNews.image;
           
           if (imageUrl.startsWith('/uploads/')) {
-            imageUrl = `http://localhost:3002${imageUrl}`;
+            imageUrl = `${FILE_SERVER}${imageUrl}`;
           } else if (imageUrl && !imageUrl.includes('/') && !imageUrl.startsWith('http') && !imageUrl.startsWith('/src/')) {
             // Handle uploaded image files (filename only) - point to file-server
-            imageUrl = `http://localhost:3002/uploads/images/${imageUrl}`;
+            imageUrl = `${FILE_SERVER}/uploads/images/${imageUrl}`;
           }
           
           setFeaturedNewsImage(imageUrl);

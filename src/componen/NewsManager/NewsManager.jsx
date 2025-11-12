@@ -5,7 +5,8 @@ import 'quill/dist/quill.snow.css';
 import './NewsManager.css';
 import { stripHtmlTags, getExcerpt } from '../../utils/htmlUtils';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://kp-mocha.vercel.app/api';
+const FILE_SERVER = import.meta.env.VITE_FILE_SERVER_URL || 'https://kp-mocha.vercel.app';
 
 export default function NewsManager() {
   // States untuk mengelola data berita
@@ -61,7 +62,7 @@ export default function NewsManager() {
     if (imagePath.startsWith('/')) return imagePath;
     
     // Default: anggap file upload di folder uploads/images
-    return `http://localhost:3002/uploads/images/${imagePath}`;
+    return `${FILE_SERVER}/uploads/images/${imagePath}`;
   };
 
   // Fetch berita dari API
@@ -345,7 +346,7 @@ export default function NewsManager() {
         
         console.log('📷 Uploading image file to file-server:', formData.imageFile.name);
         
-        const imageUploadResponse = await fetch('http://localhost:3002/upload-image', {
+        const imageUploadResponse = await fetch(`${FILE_SERVER}/upload-image`, {
           method: 'POST',
           body: imageFormData
         });
@@ -389,7 +390,7 @@ export default function NewsManager() {
         if (uploadedImagePath) {
           const fullImageUrl = uploadedImagePath.startsWith('http') 
             ? uploadedImagePath 
-            : `http://localhost:3002/uploads/images/${uploadedImagePath}`;
+            : `${FILE_SERVER}/uploads/images/${uploadedImagePath}`;
             
           window.dispatchEvent(new CustomEvent('news-image-updated', {
             detail: {

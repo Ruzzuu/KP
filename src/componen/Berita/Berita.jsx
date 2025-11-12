@@ -24,7 +24,8 @@ const Berita = () => {
   const [rotatedItems, setRotatedItems] = React.useState([]); // Array yang akan diputar untuk carousel
   const [isTransitioning, setIsTransitioning] = React.useState(false); // State untuk animasi
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://kp-mocha.vercel.app/api";
+  const FILE_SERVER = import.meta.env.VITE_FILE_SERVER_URL || "https://kp-mocha.vercel.app";
 
   // Map path di database ke import gambar yang tersedia di FE
   const imageMap = React.useMemo(() => ({
@@ -71,12 +72,12 @@ const Berita = () => {
     
     // Handle uploaded image files (filename only) - point to file-server
     if (imageUrl && !imageUrl.includes('/') && !imageUrl.startsWith('http') && !imageUrl.startsWith('/src/')) {
-      return `http://localhost:3002/uploads/images/${imageUrl}`;
+      return `${FILE_SERVER}/uploads/images/${imageUrl}`;
     }
     
     // Handle full paths starting with /uploads - point to file-server
     if (imageUrl.startsWith('/uploads/')) {
-      return `http://localhost:3002${imageUrl}`;
+      return `${FILE_SERVER}${imageUrl}`;
     }
     
     // Fallback to default

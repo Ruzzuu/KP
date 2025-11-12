@@ -9,7 +9,8 @@ import Berita2Img from "../../assets/Berita2.png";
 import Berita3Img from "../../assets/Berita3.png";
 import Berita4Img from "../../assets/Berita4.png";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://kp-mocha.vercel.app/api';
+const FILE_SERVER = import.meta.env.VITE_FILE_SERVER_URL || 'https://kp-mocha.vercel.app';
 
 const NewsDetail = () => {
   const navigate = useNavigate();
@@ -115,7 +116,7 @@ const NewsDetail = () => {
     
     // Handle file server uploads
     if (imageUrl && !imageUrl.includes('/') && !imageUrl.startsWith('http') && !imageUrl.startsWith('/src/')) {
-      return `http://localhost:3002/uploads/images/${imageUrl}`;
+      return `${FILE_SERVER}/uploads/images/${imageUrl}`;
     }
     
     // Fallback to default
