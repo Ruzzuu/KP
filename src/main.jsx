@@ -6,6 +6,13 @@ import App from "./App.jsx";                    // Import main App component yan
 import { BrowserRouter } from "react-router-dom"; // Router untuk navigasi antar halaman
 import "./index.css";                           // Import global CSS styling
 
+// Log environment variables for debugging
+console.log('🔧 Environment Check:', {
+  API_BASE: import.meta.env.VITE_API_BASE_URL || 'NOT SET',
+  FILE_SERVER: import.meta.env.VITE_FILE_SERVER_URL || 'NOT SET',
+  MODE: import.meta.env.MODE
+});
+
 // ENTRY POINT APLIKASI REACT
 // File ini adalah titik masuk utama untuk aplikasi React PERGUNU
 // Sequence: index.html -> main.jsx -> App.jsx -> routing ke komponen lain
