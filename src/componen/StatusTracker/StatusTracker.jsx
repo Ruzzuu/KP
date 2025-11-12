@@ -20,7 +20,7 @@ const StatusTracker = () => {
   const [error, setError] = useState('');
 
   // API Base URL
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://kp-mocha.vercel.app/api";
 
   // Fungsi untuk validasi format email
   const isValidEmail = (email) => {

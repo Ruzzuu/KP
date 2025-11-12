@@ -20,7 +20,7 @@ const NewsDetailLayout = () => {
   const [cleanImageView, setCleanImageView] = useState(true); // Clean view untuk demo
 
   // API Base URL
-  const API_BASE = 'http://localhost:3001/api';
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://kp-mocha.vercel.app/api';
 
   // Image mapping untuk fallback
   const imageMap = {

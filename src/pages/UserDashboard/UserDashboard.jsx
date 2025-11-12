@@ -62,7 +62,7 @@ const UserDashboard = () => {
         const userId = userData.userId || userData.id;
         console.log(`🔄 Fetching user data for ID: ${userId}`);
         
-  const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+  const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://kp-mocha.vercel.app/api';
         const response = await fetch(`${apiUrl}/users/${userId}`);
         if (!response.ok) {
           throw new Error(`Failed to fetch user data: ${response.status}`);
@@ -177,7 +177,7 @@ const UserDashboard = () => {
 
       console.log(`🔄 Downloading: ${certificate.fileName || certificate.originalName || certificate.filename}`);
 
-      const fileServerUrl = import.meta.env.VITE_FILE_SERVER_URL || 'http://localhost:3002';
+      const fileServerUrl = import.meta.env.VITE_FILE_SERVER_URL || 'https://kp-mocha.vercel.app';
       let downloadHref = null;
 
       if (typeof certificate === 'object') {
@@ -234,7 +234,7 @@ const UserDashboard = () => {
       setUser(updatedUser);
 
       // Update in API (PATCH minimal fields)
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://kp-mocha.vercel.app/api';
       const patchPayload = {
         downloads: updatedUser.downloads,
         lastDownload: updatedUser.lastDownload,

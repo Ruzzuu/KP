@@ -23,18 +23,9 @@ class ApiService {
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
     const fileServerUrl = import.meta.env.VITE_FILE_SERVER_URL;
     
-    // Only use localhost in development mode with explicit environment variables
-    if (isDevelopment && !apiBaseUrl) {
-      this.API_URL = 'http://localhost:3001/api';
-    } else {
-      this.API_URL = apiBaseUrl || '/api'; // Relative URL for production
-    }
-    
-    if (isDevelopment && !fileServerUrl) {
-      this.FILE_SERVER_URL = 'http://localhost:3002';
-    } else {
-      this.FILE_SERVER_URL = fileServerUrl || '/files'; // Relative URL for production
-    }
+    // Use environment variables or fallback to production URLs
+    this.API_URL = apiBaseUrl || 'https://kp-mocha.vercel.app/api';
+    this.FILE_SERVER_URL = fileServerUrl || 'https://kp-mocha.vercel.app';
     
     this.initialized = false;                       // Initialization status
     this._initializingPromise = null;               // Promise to guard concurrent init

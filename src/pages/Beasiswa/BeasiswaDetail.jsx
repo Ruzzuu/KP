@@ -27,7 +27,7 @@ const BeasiswaDetail = () => {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://kp-mocha.vercel.app/api";
 
   // Fetch specific beasiswa data
   useEffect(() => {

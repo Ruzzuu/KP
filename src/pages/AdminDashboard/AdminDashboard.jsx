@@ -275,7 +275,7 @@ const AdminDashboard = () => {
       }
       
       // Send PATCH request ke Express.js API
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://kp-mocha.vercel.app/api';
       const response = await fetch(`${apiUrl}/users/${editingUser.id}`, {
         method: 'PATCH',           // PATCH method untuk partial update
         headers: {
@@ -369,7 +369,7 @@ const AdminDashboard = () => {
       
       // === STEP 4: DATABASE SAVE OPERATION ===
       // Send POST request ke Express.js API
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://kp-mocha.vercel.app/api';
       const response = await fetch(`${apiUrl}/users`, {
         method: 'POST',
         headers: {
@@ -471,7 +471,7 @@ const AdminDashboard = () => {
       formData.append('certificate', file);
       formData.append('userId', userId);
 
-      const fileServerUrl = import.meta.env.VITE_FILE_SERVER_URL || 'http://localhost:3002';
+      const fileServerUrl = import.meta.env.VITE_FILE_SERVER_URL || 'https://kp-mocha.vercel.app';
       const uploadResponse = await fetch(`${fileServerUrl}/upload-certificate`, {
         method: 'POST',
         body: formData
@@ -521,7 +521,7 @@ const AdminDashboard = () => {
       );
 
       // Update in Express.js API - PATCH instead of PUT to avoid overwriting password
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://kp-mocha.vercel.app/api';
       const response = await fetch(`${apiUrl}/users/${userId}`, {
         method: 'PATCH',
         headers: {
@@ -591,7 +591,7 @@ const AdminDashboard = () => {
       // === DELETE FROM FILE SERVER (if file has proper ID and path) ===
       if (certToDelete && certToDelete.id && certToDelete.filePath) {
         try {
-          const fileServerUrl = import.meta.env.VITE_FILE_SERVER_URL || 'http://localhost:3002';
+          const fileServerUrl = import.meta.env.VITE_FILE_SERVER_URL || 'https://kp-mocha.vercel.app';
           await fetch(`${fileServerUrl}/delete-certificate/${certToDelete.id}`, {
             method: 'DELETE'
           });
@@ -620,7 +620,7 @@ const AdminDashboard = () => {
       );
 
       // Update in Express.js API using PATCH
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://kp-mocha.vercel.app/api';
       const response = await fetch(`${apiUrl}/users/${userId}`, {
         method: 'PATCH',
         headers: {
@@ -710,7 +710,7 @@ const AdminDashboard = () => {
       console.log(`🗑️ Deleting user ${userId} (${userToDelete.username}) from JSON Server...`);
 
       // Send DELETE request to Express.js API menggunakan environment URL
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://kp-mocha.vercel.app/api';
       const response = await fetch(`${apiUrl}/users/${userId}`, {
         method: 'DELETE',
         headers: {

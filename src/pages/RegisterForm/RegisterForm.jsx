@@ -113,7 +113,7 @@ const RegisterForm = () => {
       };
 
       // HTTP POST request ke JSON server database
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://kp-mocha.vercel.app/api';
       const dbResponse = await fetch(`${apiUrl}/applications`, {
         method: 'POST',
         headers: {

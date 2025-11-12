@@ -30,7 +30,7 @@ const Beasiswa = () => {
   const [submitLoading, setSubmitLoading] = useState(false); // Loading saat submit
   const [submitMessage, setSubmitMessage] = useState(''); // Message hasil submit
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://kp-mocha.vercel.app/api";
 
   // Function untuk fetch data beasiswa dari API
   const fetchBeasiswa = async (kategori = null) => {

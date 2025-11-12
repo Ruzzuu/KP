@@ -27,7 +27,7 @@ const BeasiswaManager = () => {
     kategori: 'Pendidikan'
   });
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://kp-mocha.vercel.app/api";
 
   // Kategori beasiswa yang tersedia
   const kategoriOptions = ['Riset', 'Pendidikan', 'S1', 'S2', 'Pelatihan', 'Santri'];
