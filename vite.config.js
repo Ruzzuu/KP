@@ -15,6 +15,10 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
+        // Force new hash on every build
+        entryFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
+        chunkFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
+        assetFileNames: `assets/[name]-[hash].[ext]`,
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'icons': ['react-icons'],
