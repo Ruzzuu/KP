@@ -61,9 +61,9 @@ const corsOptions = {
       const allowList = new Set([
         ...allowedOrigins,
         process.env.FRONTEND_URL,
-        // ⚠️ AFTER DEPLOYMENT: Update this with your actual Vercel URL
-        // Example: 'https://your-project.vercel.app'
-        // You can set this in ALLOWED_ORIGINS environment variable instead
+        'https://kp-mocha.vercel.app', // Production Vercel domain
+        'https://kp-git-main-fairuzs-projects-d3e0b8cf.vercel.app', // Git deployment domain
+        'https://kp-ue5wmj0ed-fairuzs-projects-d3e0b8cf.vercel.app' // Preview deployment domain
       ].filter(Boolean));
       
       if (allowList.has(origin)) {
