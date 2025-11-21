@@ -10,6 +10,7 @@ import bcrypt from 'bcryptjs';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { connectDB, getDB } from './mongodb.js';
 
 // Initialize Express app
 const app = express();
@@ -135,12 +136,61 @@ app.get('/api/news/events', (req, res) => {
 });
 
 // ===== DATABASE FUNCTIONS =====
+// MongoDB connection state
+let useMongoDB = false;
+
+// Initialize MongoDB connection
+(async () => {
+  try {
+    const db = await connectDB();
+    if (db) {
+      useMongoDB = true;
+      console.log('🍃 Using MongoDB for persistent storage');
+    } else {
+      console.log('📄 Using JSON file for storage');
+    }
+  } catch (error) {
+    console.log('📄 MongoDB not available, using JSON file');
+  }
+})();
+
 // Use /tmp in Vercel production (writable), local path in dev
 const isVercel = process.env.VERCEL === '1';
 const DB_SOURCE = join(__dirname, 'db.json');
 const DB_PATH = isVercel ? '/tmp/db.json' : DB_SOURCE;
 
-// Read database
+// Helper: Get collection from MongoDB or JSON
+const getCollection = async (collectionName) => {
+  if (useMongoDB) {
+    const db = getDB();
+    if (db) {
+      return await db.collection(collectionName).find({}).toArray();
+    }
+  }
+  // Fallback to JSON
+  const data = readDB();
+  return data[collectionName] || [];
+};
+
+// Helper: Save collection to MongoDB or JSON
+const saveCollection = async (collectionName, items) => {
+  if (useMongoDB) {
+    const db = getDB();
+    if (db) {
+      await db.collection(collectionName).deleteMany({});
+      if (items.length > 0) {
+        await db.collection(collectionName).insertMany(items);
+      }
+      return;
+    }
+  }
+  // Fallback to JSON
+  const data = readDB();
+  data[collectionName] = items;
+  writeDB(data);
+};
+
+// Read database (JSON fallback)
 const readDB = () => {
   try {
     console.log('🔍 Attempting to read database from:', DB_PATH);
@@ -175,7 +225,7 @@ const readDB = () => {
   }
 };
 
-// Write database
+// Write database (JSON fallback)
 const writeDB = (data) => {
   try {
     writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
@@ -190,26 +240,36 @@ const writeDB = (data) => {
 // ===== NEWS ENDPOINTS =====
 
 // GET /api/news - Get all news
-app.get('/api/news', (req, res) => {
-  const db = readDB();
-  console.log('📰 Returning', db.news.length, 'news items');
-  res.json(db.news || []);
+app.get('/api/news', async (req, res) => {
+  try {
+    const news = await getCollection('news');
+    console.log('📰 Returning', news.length, 'news items');
+    res.json(news || []);
+  } catch (error) {
+    console.error('Error getting news:', error);
+    res.status(500).json({ error: 'Failed to get news' });
+  }
 });
 
 // GET /api/news/:id - Get news by ID
-app.get('/api/news/:id', (req, res) => {
-  const db = readDB();
-  const news = db.news.find(n => n.id === req.params.id);
-  if (!news) {
-    return res.status(404).json({ error: 'News not found' });
+app.get('/api/news/:id', async (req, res) => {
+  try {
+    const news = await getCollection('news');
+    const item = news.find(n => n.id === req.params.id);
+    if (!item) {
+      return res.status(404).json({ error: 'News not found' });
+    }
+    res.json(item);
+  } catch (error) {
+    console.error('Error getting news:', error);
+    res.status(500).json({ error: 'Failed to get news' });
   }
-  res.json(news);
 });
 
 // POST /api/news - Create new news
-app.post('/api/news', (req, res) => {
+app.post('/api/news', async (req, res) => {
   try {
-    const db = readDB();
+    const news = await getCollection('news');
     
     // Get image path from request body (uploaded via file-server)
     const imagePath = req.body.image || null;
@@ -232,13 +292,10 @@ app.post('/api/news', (req, res) => {
       imagePath: imagePath
     });
     
-    db.news.push(newNews);
-    if (writeDB(db)) {
-      broadcastToClients('news-added', newNews);
-      res.status(201).json(newNews);
-    } else {
-      res.status(500).json({ error: 'Failed to save news' });
-    }
+    news.push(newNews);
+    await saveCollection('news', news);
+    broadcastToClients('news-added', newNews);
+    res.status(201).json(newNews);
   } catch (error) {
     console.error('Error creating news:', error);
     res.status(500).json({ error: 'Failed to create news: ' + error.message });
@@ -246,17 +303,17 @@ app.post('/api/news', (req, res) => {
 });
 
 // PUT /api/news/:id - Update news
-app.put('/api/news/:id', (req, res) => {
+app.put('/api/news/:id', async (req, res) => {
   try {
-    const db = readDB();
-    const newsIndex = db.news.findIndex(n => n.id === req.params.id);
+    const news = await getCollection('news');
+    const newsIndex = news.findIndex(n => n.id === req.params.id);
     
     if (newsIndex === -1) {
       return res.status(404).json({ error: 'News not found' });
     }
     
     // Get image path from request body (uploaded via file-server) or keep existing
-    let imagePath = db.news[newsIndex].image; // Keep existing image by default
+    let imagePath = news[newsIndex].image; // Keep existing image by default
     
     if (req.body.image !== undefined) {
       // Image field provided in JSON (could be null to remove image, or filename from file-server)
@@ -264,13 +321,13 @@ app.put('/api/news/:id', (req, res) => {
     }
     
     const updatedNews = {
-      ...db.news[newsIndex],
-      title: req.body.title || db.news[newsIndex].title,
-      content: req.body.content || db.news[newsIndex].content,
-      author: req.body.author !== undefined ? req.body.author : db.news[newsIndex].author,
-      category: req.body.category || db.news[newsIndex].category,
+      ...news[newsIndex],
+      title: req.body.title || news[newsIndex].title,
+      content: req.body.content || news[newsIndex].content,
+      author: req.body.author !== undefined ? req.body.author : news[newsIndex].author,
+      category: req.body.category || news[newsIndex].category,
       image: imagePath,
-      featured: req.body.featured !== undefined ? req.body.featured : db.news[newsIndex].featured,
+      featured: req.body.featured !== undefined ? req.body.featured : news[newsIndex].featured,
       updatedAt: new Date().toISOString()
     };
     
@@ -281,14 +338,10 @@ app.put('/api/news/:id', (req, res) => {
       imagePath: imagePath
     });
     
-    db.news[newsIndex] = updatedNews;
-    
-    if (writeDB(db)) {
-      broadcastToClients('news-updated', updatedNews);
-      res.json(updatedNews);
-    } else {
-      res.status(500).json({ error: 'Failed to update news' });
-    }
+    news[newsIndex] = updatedNews;
+    await saveCollection('news', news);
+    broadcastToClients('news-updated', updatedNews);
+    res.json(updatedNews);
   } catch (error) {
     console.error('Error updating news:', error);
     res.status(500).json({ error: 'Failed to update news: ' + error.message });
@@ -296,21 +349,22 @@ app.put('/api/news/:id', (req, res) => {
 });
 
 // DELETE /api/news/:id - Delete news
-app.delete('/api/news/:id', (req, res) => {
-  const db = readDB();
-  const newsIndex = db.news.findIndex(n => n.id === req.params.id);
-  
-  if (newsIndex === -1) {
-    return res.status(404).json({ error: 'News not found' });
-  }
-  
-  const deletedNews = db.news[newsIndex];
-  db.news.splice(newsIndex, 1);
-  
-  if (writeDB(db)) {
+app.delete('/api/news/:id', async (req, res) => {
+  try {
+    const news = await getCollection('news');
+    const newsIndex = news.findIndex(n => n.id === req.params.id);
+    
+    if (newsIndex === -1) {
+      return res.status(404).json({ error: 'News not found' });
+    }
+    
+    const deletedNews = news[newsIndex];
+    news.splice(newsIndex, 1);
+    await saveCollection('news', news);
     broadcastToClients('news-deleted', { id: req.params.id });
     res.json({ message: 'News deleted successfully', deletedNews });
-  } else {
+  } catch (error) {
+    console.error('Error deleting news:', error);
     res.status(500).json({ error: 'Failed to delete news' });
   }
 });
