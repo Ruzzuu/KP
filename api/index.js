@@ -599,232 +599,255 @@ const calculateBeasiswaStatus = (tanggal_mulai, deadline) => {
 };
 
 // GET /api/beasiswa - Get all beasiswa with auto-calculated status
-app.get('/api/beasiswa', (req, res) => {
-  const db = readDB();
-  
-  // Update status otomatis untuk semua beasiswa
-  const beasiswaWithStatus = (db.beasiswa || []).map(beasiswa => ({
-    ...beasiswa,
-    status: calculateBeasiswaStatus(beasiswa.tanggal_mulai, beasiswa.deadline)
-  }));
-  
-  console.log('🎓 Returning', beasiswaWithStatus.length, 'beasiswa items');
-  res.json(beasiswaWithStatus);
+app.get('/api/beasiswa', async (req, res) => {
+  try {
+    const beasiswa = await getCollection('beasiswa');
+    
+    // Update status otomatis untuk semua beasiswa
+    const beasiswaWithStatus = beasiswa.map(b => ({
+      ...b,
+      status: calculateBeasiswaStatus(b.tanggal_mulai, b.deadline)
+    }));
+    
+    console.log('🎓 Returning', beasiswaWithStatus.length, 'beasiswa items');
+    res.json(beasiswaWithStatus);
+  } catch (error) {
+    console.error('Error fetching beasiswa:', error);
+    res.status(500).json({ error: 'Failed to fetch beasiswa' });
+  }
 });
 
 // GET /api/beasiswa/:id - Get beasiswa by ID with auto-calculated status
-app.get('/api/beasiswa/:id', (req, res) => {
-  const db = readDB();
-  const beasiswa = (db.beasiswa || []).find(b => b.id === req.params.id);
-  
-  if (!beasiswa) {
-    return res.status(404).json({ error: 'Beasiswa not found' });
+app.get('/api/beasiswa/:id', async (req, res) => {
+  try {
+    const beasiswa = await getCollection('beasiswa');
+    const foundBeasiswa = beasiswa.find(b => b.id === req.params.id);
+    
+    if (!foundBeasiswa) {
+      return res.status(404).json({ error: 'Beasiswa not found' });
+    }
+    
+    // Update status otomatis
+    const beasiswaWithStatus = {
+      ...foundBeasiswa,
+      status: calculateBeasiswaStatus(foundBeasiswa.tanggal_mulai, foundBeasiswa.deadline)
+    };
+    
+    res.json(beasiswaWithStatus);
+  } catch (error) {
+    console.error('Error fetching beasiswa:', error);
+    res.status(500).json({ error: 'Failed to fetch beasiswa' });
   }
-  
-  // Update status otomatis
-  const beasiswaWithStatus = {
-    ...beasiswa,
-    status: calculateBeasiswaStatus(beasiswa.tanggal_mulai, beasiswa.deadline)
-  };
-  
-  res.json(beasiswaWithStatus);
 });
 
 // POST /api/beasiswa - Create new beasiswa
-app.post('/api/beasiswa', (req, res) => {
-  const db = readDB();
-  
-  // Validate required fields
-  const requiredFields = ['judul', 'nominal', 'deadline', 'tanggal_mulai', 'deskripsi', 'persyaratan', 'kategori'];
-  for (const field of requiredFields) {
-    if (!req.body[field]) {
-      return res.status(400).json({ error: `Field ${field} is required` });
+app.post('/api/beasiswa', async (req, res) => {
+  try {
+    // Validate required fields
+    const requiredFields = ['judul', 'nominal', 'deadline', 'tanggal_mulai', 'deskripsi', 'persyaratan', 'kategori'];
+    for (const field of requiredFields) {
+      if (!req.body[field]) {
+        return res.status(400).json({ error: `Field ${field} is required` });
+      }
     }
-  }
-  
-  const newBeasiswa = {
-    id: Date.now().toString(),
-    judul: req.body.judul,
-    nominal: req.body.nominal,
-    deadline: req.body.deadline,
-    tanggal_mulai: req.body.tanggal_mulai,
-    status: calculateBeasiswaStatus(req.body.tanggal_mulai, req.body.deadline), // Auto-calculate
-    deskripsi: req.body.deskripsi,
-    persyaratan: Array.isArray(req.body.persyaratan) ? req.body.persyaratan : [req.body.persyaratan],
-    kategori: req.body.kategori,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
-  
-  // Initialize beasiswa array if not exists
-  if (!db.beasiswa) {
-    db.beasiswa = [];
-  }
-  
-  db.beasiswa.push(newBeasiswa);
-  
-  if (writeDB(db)) {
+    
+    const newBeasiswa = {
+      id: Date.now().toString(),
+      judul: req.body.judul,
+      nominal: req.body.nominal,
+      deadline: req.body.deadline,
+      tanggal_mulai: req.body.tanggal_mulai,
+      status: calculateBeasiswaStatus(req.body.tanggal_mulai, req.body.deadline), // Auto-calculate
+      deskripsi: req.body.deskripsi,
+      persyaratan: Array.isArray(req.body.persyaratan) ? req.body.persyaratan : [req.body.persyaratan],
+      kategori: req.body.kategori,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    const beasiswa = await getCollection('beasiswa');
+    beasiswa.push(newBeasiswa);
+    await saveCollection('beasiswa', beasiswa);
+    
     broadcastToClients('beasiswa-added', newBeasiswa);
     res.status(201).json(newBeasiswa);
-  } else {
+  } catch (error) {
+    console.error('Error creating beasiswa:', error);
     res.status(500).json({ error: 'Failed to save beasiswa' });
   }
 });
 
 // PUT /api/beasiswa/:id - Update beasiswa
-app.put('/api/beasiswa/:id', (req, res) => {
-  const db = readDB();
-  const beasiswaIndex = (db.beasiswa || []).findIndex(b => b.id === req.params.id);
-  
-  if (beasiswaIndex === -1) {
-    return res.status(404).json({ error: 'Beasiswa not found' });
-  }
-  
-  const updatedBeasiswa = {
-    ...db.beasiswa[beasiswaIndex],
-    ...req.body,
-    // Auto-calculate status jika tanggal diubah
-    status: calculateBeasiswaStatus(
-      req.body.tanggal_mulai || db.beasiswa[beasiswaIndex].tanggal_mulai,
-      req.body.deadline || db.beasiswa[beasiswaIndex].deadline
-    ),
-    updatedAt: new Date().toISOString()
-  };
-  
-  db.beasiswa[beasiswaIndex] = updatedBeasiswa;
-  
-  if (writeDB(db)) {
+app.put('/api/beasiswa/:id', async (req, res) => {
+  try {
+    const beasiswa = await getCollection('beasiswa');
+    const beasiswaIndex = beasiswa.findIndex(b => b.id === req.params.id);
+    
+    if (beasiswaIndex === -1) {
+      return res.status(404).json({ error: 'Beasiswa not found' });
+    }
+    
+    const updatedBeasiswa = {
+      ...beasiswa[beasiswaIndex],
+      ...req.body,
+      // Auto-calculate status jika tanggal diubah
+      status: calculateBeasiswaStatus(
+        req.body.tanggal_mulai || beasiswa[beasiswaIndex].tanggal_mulai,
+        req.body.deadline || beasiswa[beasiswaIndex].deadline
+      ),
+      updatedAt: new Date().toISOString()
+    };
+    
+    beasiswa[beasiswaIndex] = updatedBeasiswa;
+    await saveCollection('beasiswa', beasiswa);
+    
     broadcastToClients('beasiswa-updated', updatedBeasiswa);
     res.json(updatedBeasiswa);
-  } else {
+  } catch (error) {
+    console.error('Error updating beasiswa:', error);
     res.status(500).json({ error: 'Failed to update beasiswa' });
   }
 });
 
 // DELETE /api/beasiswa/:id - Delete beasiswa
-app.delete('/api/beasiswa/:id', (req, res) => {
-  const db = readDB();
-  const beasiswaIndex = (db.beasiswa || []).findIndex(b => b.id === req.params.id);
-  
-  if (beasiswaIndex === -1) {
-    return res.status(404).json({ error: 'Beasiswa not found' });
-  }
-  
-  const deletedBeasiswa = db.beasiswa[beasiswaIndex];
-  db.beasiswa.splice(beasiswaIndex, 1);
-  
-  if (writeDB(db)) {
+app.delete('/api/beasiswa/:id', async (req, res) => {
+  try {
+    const beasiswa = await getCollection('beasiswa');
+    const beasiswaIndex = beasiswa.findIndex(b => b.id === req.params.id);
+    
+    if (beasiswaIndex === -1) {
+      return res.status(404).json({ error: 'Beasiswa not found' });
+    }
+    
+    beasiswa.splice(beasiswaIndex, 1);
+    await saveCollection('beasiswa', beasiswa);
+    
     broadcastToClients('beasiswa-deleted', { id: req.params.id });
     res.status(204).send(); // No content response for successful deletion
-  } else {
+  } catch (error) {
+    console.error('Error deleting beasiswa:', error);
     res.status(500).json({ error: 'Failed to delete beasiswa' });
   }
 });
 
 // GET /api/beasiswa/kategori/:kategori - Get beasiswa by kategori
-app.get('/api/beasiswa/kategori/:kategori', (req, res) => {
-  const db = readDB();
-  const kategori = req.params.kategori;
-  
-  let filteredBeasiswa = db.beasiswa || [];
-  
-  // Filter by kategori (case insensitive), kecuali "Semua Program"
-  if (kategori !== 'Semua Program') {
-    filteredBeasiswa = filteredBeasiswa.filter(b => 
-      b.kategori.toLowerCase() === kategori.toLowerCase()
-    );
+app.get('/api/beasiswa/kategori/:kategori', async (req, res) => {
+  try {
+    const beasiswa = await getCollection('beasiswa');
+    const kategori = req.params.kategori;
+    
+    let filteredBeasiswa = beasiswa;
+    
+    // Filter by kategori (case insensitive), kecuali "Semua Program"
+    if (kategori !== 'Semua Program') {
+      filteredBeasiswa = filteredBeasiswa.filter(b => 
+        b.kategori.toLowerCase() === kategori.toLowerCase()
+      );
+    }
+    
+    // Update status otomatis untuk semua hasil
+    const beasiswaWithStatus = filteredBeasiswa.map(b => ({
+      ...b,
+      status: calculateBeasiswaStatus(b.tanggal_mulai, b.deadline)
+    }));
+    
+    console.log('🎓 Returning', beasiswaWithStatus.length, 'beasiswa items for kategori:', kategori);
+    res.json(beasiswaWithStatus);
+  } catch (error) {
+    console.error('Error fetching beasiswa by kategori:', error);
+    res.status(500).json({ error: 'Failed to fetch beasiswa' });
   }
-  
-  // Update status otomatis untuk semua hasil
-  const beasiswaWithStatus = filteredBeasiswa.map(beasiswa => ({
-    ...beasiswa,
-    status: calculateBeasiswaStatus(beasiswa.tanggal_mulai, beasiswa.deadline)
-  }));
-  
-  console.log('🎓 Returning', beasiswaWithStatus.length, 'beasiswa items for kategori:', kategori);
-  res.json(beasiswaWithStatus);
 });
 
 // ===== BEASISWA APPLICATION ENDPOINTS =====
 // POST /api/beasiswa-applications - Submit beasiswa application
-app.post('/api/beasiswa-applications', (req, res) => {
-  const db = readDB();
-  
-  // Validate required fields for beasiswa application
-  const requiredFields = ['beasiswaId', 'beasiswaTitle', 'fullName', 'email', 'phone'];
-  for (const field of requiredFields) {
-    if (!req.body[field]) {
-      return res.status(400).json({ error: `Field ${field} is required` });
+app.post('/api/beasiswa-applications', async (req, res) => {
+  try {
+    // Validate required fields for beasiswa application
+    const requiredFields = ['beasiswaId', 'beasiswaTitle', 'fullName', 'email', 'phone'];
+    for (const field of requiredFields) {
+      if (!req.body[field]) {
+        return res.status(400).json({ error: `Field ${field} is required` });
+      }
     }
-  }
-  
-  const newApplication = {
-    id: Date.now().toString(),
-    beasiswaId: req.body.beasiswaId,
-    beasiswaTitle: req.body.beasiswaTitle,
-    fullName: req.body.fullName,
-    email: req.body.email,
-    phone: req.body.phone,
-    education: req.body.education || '',
-    gpa: req.body.gpa || '',
-    motivation: req.body.motivation || '',
-    status: 'pending',
-    submittedAt: req.body.submittedAt || new Date().toISOString(),
-    processedAt: null,
-    notes: '',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
-  
-  // Initialize beasiswa_applications array if not exists
-  if (!db.beasiswa_applications) {
-    db.beasiswa_applications = [];
-  }
-  
-  db.beasiswa_applications.push(newApplication);
-  
-  if (writeDB(db)) {
+    
+    const newApplication = {
+      id: Date.now().toString(),
+      beasiswaId: req.body.beasiswaId,
+      beasiswaTitle: req.body.beasiswaTitle,
+      fullName: req.body.fullName,
+      email: req.body.email,
+      phone: req.body.phone,
+      education: req.body.education || '',
+      gpa: req.body.gpa || '',
+      motivation: req.body.motivation || '',
+      status: 'pending',
+      submittedAt: req.body.submittedAt || new Date().toISOString(),
+      processedAt: null,
+      notes: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    const applications = await getCollection('beasiswa_applications');
+    applications.push(newApplication);
+    await saveCollection('beasiswa_applications', applications);
+    
     broadcastToClients('beasiswa-application-added', newApplication);
     res.status(201).json({
       message: 'Pendaftaran beasiswa berhasil dikirim',
       application: newApplication
     });
-  } else {
+  } catch (error) {
+    console.error('Error saving beasiswa application:', error);
     res.status(500).json({ error: 'Failed to save beasiswa application' });
   }
 });
 
 // GET /api/beasiswa-applications - Get all beasiswa applications (admin only)
-app.get('/api/beasiswa-applications', (req, res) => {
-  const db = readDB();
-  res.json(db.beasiswa_applications || []);
+app.get('/api/beasiswa-applications', async (req, res) => {
+  try {
+    const applications = await getCollection('beasiswa_applications');
+    res.json(applications);
+  } catch (error) {
+    console.error('Error fetching beasiswa applications:', error);
+    res.status(500).json({ error: 'Failed to fetch beasiswa applications' });
+  }
 });
 
 // GET /api/beasiswa-applications/user/:email - Get applications by user email
-app.get('/api/beasiswa-applications/user/:email', (req, res) => {
-  const db = readDB();
-  const userApplications = (db.beasiswa_applications || []).filter(app => app.email === req.params.email);
-  res.json(userApplications);
+app.get('/api/beasiswa-applications/user/:email', async (req, res) => {
+  try {
+    const applications = await getCollection('beasiswa_applications');
+    const userApplications = applications.filter(app => app.email === req.params.email);
+    res.json(userApplications);
+  } catch (error) {
+    console.error('Error fetching user beasiswa applications:', error);
+    res.status(500).json({ error: 'Failed to fetch user applications' });
+  }
 });
 
 // PUT /api/beasiswa-applications/:id/status - Update application status
-app.put('/api/beasiswa-applications/:id/status', (req, res) => {
-  const db = readDB();
-  const appIndex = (db.beasiswa_applications || []).findIndex(app => app.id === req.params.id);
-  
-  if (appIndex === -1) {
-    return res.status(404).json({ error: 'Beasiswa application not found' });
-  }
-  
-  db.beasiswa_applications[appIndex].status = req.body.status;
-  db.beasiswa_applications[appIndex].processedAt = new Date().toISOString();
-  db.beasiswa_applications[appIndex].notes = req.body.notes || '';
-  db.beasiswa_applications[appIndex].updatedAt = new Date().toISOString();
-  
-  if (writeDB(db)) {
-    broadcastToClients('beasiswa-application-updated', db.beasiswa_applications[appIndex]);
-    res.json(db.beasiswa_applications[appIndex]);
-  } else {
+app.put('/api/beasiswa-applications/:id/status', async (req, res) => {
+  try {
+    const applications = await getCollection('beasiswa_applications');
+    const appIndex = applications.findIndex(app => app.id === req.params.id);
+    
+    if (appIndex === -1) {
+      return res.status(404).json({ error: 'Beasiswa application not found' });
+    }
+    
+    applications[appIndex].status = req.body.status;
+    applications[appIndex].processedAt = new Date().toISOString();
+    applications[appIndex].notes = req.body.notes || '';
+    applications[appIndex].updatedAt = new Date().toISOString();
+    
+    await saveCollection('beasiswa_applications', applications);
+    
+    broadcastToClients('beasiswa-application-updated', applications[appIndex]);
+    res.json(applications[appIndex]);
+  } catch (error) {
+    console.error('Error updating beasiswa application:', error);
     res.status(500).json({ error: 'Failed to update beasiswa application status' });
   }
 });
@@ -854,99 +877,116 @@ app.post('/api/applications', (req, res) => {
 });
 
 // GET /api/applications - Get all applications (admin only)
-app.get('/api/applications', (req, res) => {
-  const db = readDB();
-  res.json(db.applications || []);
+app.get('/api/applications', async (req, res) => {
+  try {
+    const applications = await getCollection('applications');
+    res.json(applications || []);
+  } catch (error) {
+    console.error('Error getting applications:', error);
+    res.status(500).json({ error: 'Failed to get applications' });
+  }
 });
 
 // GET /api/applications/user/:userId - Get applications by user
-app.get('/api/applications/user/:userId', (req, res) => {
-  const db = readDB();
-  const userApplications = (db.applications || []).filter(app => app.userId === req.params.userId);
-  res.json(userApplications);
+app.get('/api/applications/user/:userId', async (req, res) => {
+  try {
+    const applications = await getCollection('applications');
+    const userApplications = applications.filter(app => app.userId === req.params.userId);
+    res.json(userApplications);
+  } catch (error) {
+    console.error('Error getting user applications:', error);
+    res.status(500).json({ error: 'Failed to get applications' });
+  }
 });
 
 // PUT /api/applications/:id/status - Update application status
-app.put('/api/applications/:id/status', (req, res) => {
-  const db = readDB();
-  const appIndex = db.applications.findIndex(app => app.id === req.params.id);
-  
-  if (appIndex === -1) {
-    return res.status(404).json({ error: 'Application not found' });
-  }
-  
-  db.applications[appIndex].status = req.body.status;
-  db.applications[appIndex].updatedAt = new Date().toISOString();
-  
-  if (writeDB(db)) {
-    res.json(db.applications[appIndex]);
-  } else {
+app.put('/api/applications/:id/status', async (req, res) => {
+  try {
+    const applications = await getCollection('applications');
+    const appIndex = applications.findIndex(app => app.id === req.params.id);
+    
+    if (appIndex === -1) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+    
+    applications[appIndex].status = req.body.status;
+    applications[appIndex].updatedAt = new Date().toISOString();
+    
+    await saveCollection('applications', applications);
+    res.json(applications[appIndex]);
+  } catch (error) {
+    console.error('Error updating application status:', error);
     res.status(500).json({ error: 'Failed to update application status' });
   }
 });
 
 // DELETE /api/applications/:id - Delete application (remove from history)
-app.delete('/api/applications/:id', (req, res) => {
-  const db = readDB();
-  const appIndex = db.applications.findIndex(app => app.id === req.params.id);
-  
-  if (appIndex === -1) {
-    return res.status(404).json({ error: 'Application not found' });
-  }
-  
-  // Remove application from array
-  db.applications.splice(appIndex, 1);
-  
-  if (writeDB(db)) {
+app.delete('/api/applications/:id', async (req, res) => {
+  try {
+    const applications = await getCollection('applications');
+    const appIndex = applications.findIndex(app => app.id === req.params.id);
+    
+    if (appIndex === -1) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+    
+    // Remove application from array
+    applications.splice(appIndex, 1);
+    
+    await saveCollection('applications', applications);
     console.log(`🗑️ Application ${req.params.id} deleted successfully`);
     res.json({ success: true, message: 'Application deleted' });
-  } else {
+  } catch (error) {
+    console.error('Error deleting application:', error);
     res.status(500).json({ error: 'Failed to delete application' });
   }
 });
 
 // PATCH /api/applications/:id - Update application (for approve/reject with notes)
-app.patch('/api/applications/:id', (req, res) => {
-  const db = readDB();
-  const appIndex = db.applications.findIndex(app => app.id === req.params.id);
-  
-  if (appIndex === -1) {
-    return res.status(404).json({ error: 'Application not found' });
-  }
-  
-  // Update application with new data
-  const updatedApp = {
-    ...db.applications[appIndex],
-    ...req.body,
-    processedAt: new Date().toISOString()
-  };
-  
-  db.applications[appIndex] = updatedApp;
-  
-  if (writeDB(db)) {
+app.patch('/api/applications/:id', async (req, res) => {
+  try {
+    const applications = await getCollection('applications');
+    const appIndex = applications.findIndex(app => app.id === req.params.id);
+    
+    if (appIndex === -1) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+    
+    // Update application with new data
+    const updatedApp = {
+      ...applications[appIndex],
+      ...req.body,
+      processedAt: new Date().toISOString()
+    };
+    
+    applications[appIndex] = updatedApp;
+    await saveCollection('applications', applications);
+    
     console.log(`✅ Application ${req.params.id} updated:`, req.body.status || 'data updated');
     
     // Broadcast real-time update
     broadcastToClients('application-updated', updatedApp);
     
     res.json(updatedApp);
-  } else {
+  } catch (error) {
+    console.error('Error updating application:', error);
     res.status(500).json({ error: 'Failed to update application' });
   }
 });
 
 // ===== STATUS CHECK ENDPOINT =====
 // GET /api/check-status/:email - Check application status by email (public endpoint)
-app.get('/api/check-status/:email', (req, res) => {
-  const db = readDB();
-  const email = decodeURIComponent(req.params.email).toLowerCase().trim();
-  
-  console.log(`🔍 Checking application status for email: ${email}`);
-  
-  // Search for application by email (case-insensitive)
-  const application = (db.applications || []).find(
-    app => app.email && app.email.toLowerCase().trim() === email
-  );
+app.get('/api/check-status/:email', async (req, res) => {
+  try {
+    const applications = await getCollection('applications');
+    const email = decodeURIComponent(req.params.email).toLowerCase().trim();
+    
+    console.log(`🔍 Checking application status for email: ${email}`);
+    
+    // Search for application by email (case-insensitive)
+    const application = applications.find(
+      app => app.email && app.email.toLowerCase().trim() === email
+    );
   
   if (!application) {
     console.log(`❌ No application found for email: ${email}`);
@@ -975,104 +1015,122 @@ app.get('/api/check-status/:email', (req, res) => {
   
   console.log(`✅ Application found - Status: ${application.status}`);
   
-  res.json({
-    success: true,
-    message: statusMessage,
-    application: {
-      id: application.id,
-      fullName: application.fullName,
-      email: application.email,
-      phone: application.phone,
-      position: application.position || 'N/A',
-      school: application.school || 'N/A',
-      status: application.status,
-      submittedAt: application.submittedAt,
-      processedAt: application.processedAt || null,
-      notes: application.notes || '',
-      // Hide sensitive data
-      credentials: undefined,
-      pw: undefined,
-      pc: undefined
-    }
-  });
+    res.json({
+      success: true,
+      message: statusMessage,
+      application: {
+        id: application.id,
+        fullName: application.fullName,
+        email: application.email,
+        phone: application.phone,
+        position: application.position || 'N/A',
+        school: application.school || 'N/A',
+        status: application.status,
+        submittedAt: application.submittedAt,
+        processedAt: application.processedAt || null,
+        notes: application.notes || '',
+        // Hide sensitive data
+        credentials: undefined,
+        pw: undefined,
+        pc: undefined
+      }
+    });
+  } catch (error) {
+    console.error('Error checking application status:', error);
+    res.status(500).json({ error: 'Failed to check status' });
+  }
 });
 
 // ===== USER MANAGEMENT ENDPOINTS =====
 
 // GET /api/users - Get all users (for admin dashboard)
-app.get('/api/users', (req, res) => {
-  const db = readDB();
-  console.log('👥 Returning', db.users.length, 'users');
-  
-  // Remove passwords from response
-  const usersWithoutPasswords = db.users.map(user => {
-    const { password: _pwd, ...userWithoutPassword } = user;
-    return userWithoutPassword;
-  });
-  
-  res.json(usersWithoutPasswords);
+app.get('/api/users', async (req, res) => {
+  try {
+    const users = await getCollection('users');
+    console.log('👥 Returning', users.length, 'users');
+    
+    // Remove passwords from response
+    const usersWithoutPasswords = users.map(user => {
+      const { password: _pwd, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    });
+    
+    res.json(usersWithoutPasswords);
+  } catch (error) {
+    console.error('Error getting users:', error);
+    res.status(500).json({ error: 'Failed to get users' });
+  }
 });
 
 // GET /api/users/:id - Get user by ID
-app.get('/api/users/:id', (req, res) => {
-  const db = readDB();
-  const user = db.users.find(u => u.id === req.params.id);
-  
-  if (!user) {
-    return res.status(404).json({ error: 'User not found' });
+app.get('/api/users/:id', async (req, res) => {
+  try {
+    const users = await getCollection('users');
+    const user = users.find(u => u.id === req.params.id);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Remove password from response
+    const { password: _pwd, ...userWithoutPassword } = user;
+    res.json(userWithoutPassword);
+  } catch (error) {
+    console.error('Error getting user:', error);
+    res.status(500).json({ error: 'Failed to get user' });
   }
-  
-  // Remove password from response
-  const { password: _pwd, ...userWithoutPassword } = user;
-  res.json(userWithoutPassword);
 });
 
 // PUT /api/users/:id - Update user
 app.put('/api/users/:id', async (req, res) => {
-  const db = readDB();
-  const userIndex = db.users.findIndex(u => u.id === req.params.id);
-  
-  if (userIndex === -1) {
-    return res.status(404).json({ error: 'User not found' });
-  }
-  
-  const updatedUser = {
-    ...db.users[userIndex],
-    ...req.body,
-    updatedAt: new Date().toISOString()
-  };
-  
-  // If password is being updated, hash it
-  if (req.body.password) {
-    updatedUser.password = await bcrypt.hash(req.body.password, 10);
-  }
-  
-  db.users[userIndex] = updatedUser;
-  
-  if (writeDB(db)) {
+  try {
+    const users = await getCollection('users');
+    const userIndex = users.findIndex(u => u.id === req.params.id);
+    
+    if (userIndex === -1) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const updatedUser = {
+      ...users[userIndex],
+      ...req.body,
+      updatedAt: new Date().toISOString()
+    };
+    
+    // If password is being updated, hash it
+    if (req.body.password) {
+      updatedUser.password = await bcrypt.hash(req.body.password, 10);
+    }
+    
+    users[userIndex] = updatedUser;
+    await saveCollection('users', users);
+    
     const { password: _pwd, ...userWithoutPassword } = updatedUser;
     res.json(userWithoutPassword);
-  } else {
+  } catch (error) {
+    console.error('Error updating user:', error);
     res.status(500).json({ error: 'Failed to update user' });
   }
 });
 
 // DELETE /api/users/:id - Delete user
-app.delete('/api/users/:id', (req, res) => {
-  const db = readDB();
-  const userIndex = db.users.findIndex(u => u.id === req.params.id);
-  
-  if (userIndex === -1) {
-    return res.status(404).json({ error: 'User not found' });
-  }
-  
-  const deletedUser = db.users[userIndex];
-  db.users.splice(userIndex, 1);
-  
-  if (writeDB(db)) {
+app.delete('/api/users/:id', async (req, res) => {
+  try {
+    const users = await getCollection('users');
+    const userIndex = users.findIndex(u => u.id === req.params.id);
+    
+    if (userIndex === -1) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const deletedUser = users[userIndex];
+    users.splice(userIndex, 1);
+    await saveCollection('users', users);
+    
     const { password: _pwd, ...userWithoutPassword } = deletedUser;
     res.json({ message: 'User deleted successfully', deletedUser: userWithoutPassword });
-  } else {
+  } catch (error) {
+    console.error('Error deleting user:', error);
     res.status(500).json({ error: 'Failed to delete user' });
   }
 });
