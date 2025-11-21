@@ -169,10 +169,13 @@ const DB_PATH = isVercel ? '/tmp/db.json' : DB_SOURCE;
 
 // Helper: Get collection from MongoDB or JSON
 const getCollection = async (collectionName) => {
-  if (useMongoDB) {
-    const db = getDB();
-    if (db) {
+  // Check MongoDB availability directly (don't rely on useMongoDB flag due to async init)
+  const db = getDB();
+  if (db) {
+    try {
       return await db.collection(collectionName).find({}).toArray();
+    } catch (error) {
+      console.error('MongoDB read error, falling back to JSON:', error.message);
     }
   }
   // Fallback to JSON
@@ -182,14 +185,18 @@ const getCollection = async (collectionName) => {
 
 // Helper: Save collection to MongoDB or JSON
 const saveCollection = async (collectionName, items) => {
-  if (useMongoDB) {
-    const db = getDB();
-    if (db) {
+  // Check MongoDB availability directly (don't rely on useMongoDB flag due to async init)
+  const db = getDB();
+  if (db) {
+    try {
       await db.collection(collectionName).deleteMany({});
       if (items.length > 0) {
         await db.collection(collectionName).insertMany(items);
       }
+      console.log(`✅ Saved ${items.length} items to MongoDB collection: ${collectionName}`);
       return;
+    } catch (error) {
+      console.error('MongoDB write error, falling back to JSON:', error.message);
     }
   }
   // Fallback to JSON
@@ -1320,19 +1327,27 @@ app.post('/api/admin/migrate', async (req, res) => {
 app.get('/api/admin/db-status', async (req, res) => {
   try {
     const db = getDB();
+    const mongoConnected = db !== null;
+    
     const status = {
-      useMongoDB,
-      isConnected: db !== null,
+      useMongoDB: mongoConnected, // Use actual DB connection status, not the flag
+      isConnected: mongoConnected,
+      mongodbUriExists: !!process.env.MONGODB_URI,
       collections: {}
     };
     
     if (db) {
       // Get counts from MongoDB
-      status.collections.users = await db.collection('users').countDocuments();
-      status.collections.news = await db.collection('news').countDocuments();
-      status.collections.beasiswa = await db.collection('beasiswa').countDocuments();
-      status.collections.applications = await db.collection('applications').countDocuments();
-      status.collections.beasiswa_applications = await db.collection('beasiswa_applications').countDocuments();
+      try {
+        status.collections.users = await db.collection('users').countDocuments();
+        status.collections.news = await db.collection('news').countDocuments();
+        status.collections.beasiswa = await db.collection('beasiswa').countDocuments();
+        status.collections.applications = await db.collection('applications').countDocuments();
+        status.collections.beasiswa_applications = await db.collection('beasiswa_applications').countDocuments();
+      } catch (countError) {
+        console.error('Error counting documents:', countError.message);
+        status.error = countError.message;
+      }
     } else {
       // Get counts from JSON
       const data = readDB();
