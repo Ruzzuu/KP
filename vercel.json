@@ -11,7 +11,7 @@
   "env": {
     "CLOUDINARY_CLOUD_NAME": "dud8vu2an",
     "CLOUDINARY_API_KEY": "265756497564172",
-    "CLOUDINARY_API_SECRET": "@cloudinary_api_secret"
+    "CLOUDINARY_API_SECRET": "N8SBdn4YQz_CYppX6jBRVPuEcCM"
   },
   "buildCommand": "npm run build",
   "cleanUrls": true,
@@ -60,7 +60,7 @@
       ]
     },
     {
-      "source": "/(.*\\.(png|jpg|jpeg|gif|webp|svg|ico))",
+      "source": "/:path*\\.(png|jpg|jpeg|gif|webp|svg|ico)",
       "headers": [
         {
           "key": "Cache-Control",
