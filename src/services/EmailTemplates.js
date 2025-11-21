@@ -34,7 +34,7 @@ export const emailTemplates = {
             <!-- Box kredensial login dengan styling khusus -->
             <div class="credentials">
               <h3>🔐 Informasi Login Anda:</h3>
-              <p><strong>Website:</strong> <a href="http://localhost:5173/login">Portal PERGUNU</a></p>
+              <p><strong>Website:</strong> <a href="https://kp-mocha.vercel.app/login">Portal PERGUNU</a></p>
               <p><strong>Username:</strong> <code>${userData.username}</code></p>
               <p><strong>Password Awal:</strong> Gunakan NIK Anda sebagai password untuk login pertama</p>
               <p style="color: #dc2626;"><strong>⚠️ Wajib:</strong> Ganti password setelah login pertama untuk keamanan akun</p>
@@ -50,7 +50,7 @@ export const emailTemplates = {
             
             <!-- CTA button dengan styling inline -->
             <div style="text-align: center;">
-              <a href="http://localhost:5173/login" class="button">🚀 Login Sekarang</a>
+              <a href="https://kp-mocha.vercel.app/login" class="button">🚀 Login Sekarang</a>
             </div>
             
             <p><strong>💡 Tips Keamanan:</strong></p>
@@ -115,7 +115,7 @@ export const emailTemplates = {
             </ol>
             
             <div style="text-align: center;">
-              <a href="http://localhost:5173" class="button">📝 Daftar Ulang</a>
+              <a href="https://kp-mocha.vercel.app" class="button">📝 Daftar Ulang</a>
             </div>
             
             <p>Jangan berkecil hati! Ini adalah proses standar untuk memastikan kualitas data. Kami sangat menunggu Anda bergabung dengan keluarga PERGUNU.</p>
@@ -270,9 +270,9 @@ export const emailTemplates = {
             <!-- Tombol aksi untuk admin -->
             <div class="button-container">
               <!-- Tombol approve menuju admin dashboard -->
-              <a href="http://localhost:5173/admin" class="button">✅ Review & Approve</a>
+              <a href="https://kp-mocha.vercel.app/admin" class="button">✅ Review & Approve</a>
               <!-- Tombol reject menuju admin dashboard -->
-              <a href="http://localhost:5173/admin" class="button reject">❌ Reject Application</a>
+              <a href="https://kp-mocha.vercel.app/admin" class="button reject">❌ Reject Application</a>
             </div>
             
             <!-- Panduan langkah selanjutnya untuk admin -->
