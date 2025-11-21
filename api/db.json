@@ -285,7 +285,7 @@
       ],
       "createdAt": "2025-01-20T10:43:23.082Z",
       "updatedAt": "2025-08-15T12:00:00.000Z",
-      "image": "/src/assets/Berita4.png",
+      "image": "https://kp-mocha.vercel.app/api/proxy-image?url=http://res.cloudinary.com/dud8vu2an/image/upload/v1763746152/pergunu/news/placeholder.png",
       "featured": false
     },
     {
