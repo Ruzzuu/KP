@@ -13,6 +13,12 @@
     "CLOUDINARY_API_KEY": "265756497564172",
     "CLOUDINARY_API_SECRET": "N8SBdn4YQz_CYppX6jBRVPuEcCM"
   },
+  "functions": {
+    "api/index.js": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 10
+    }
+  },
   "buildCommand": "npm run build",
   "cleanUrls": true,
   "outputDirectory": "dist",
