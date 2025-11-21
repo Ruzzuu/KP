@@ -142,15 +142,23 @@ let useMongoDB = false;
 // Initialize MongoDB connection
 (async () => {
   try {
+    console.log('🔄 Attempting to connect to MongoDB...');
+    console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
+    
     const db = await connectDB();
     if (db) {
       useMongoDB = true;
       console.log('🍃 Using MongoDB for persistent storage');
+      
+      // Test connection by listing collections
+      const collections = await db.listCollections().toArray();
+      console.log('📊 Available collections:', collections.map(c => c.name).join(', ') || 'none');
     } else {
-      console.log('📄 Using JSON file for storage');
+      console.log('📄 Using JSON file for storage (MongoDB connection returned null)');
     }
   } catch (error) {
-    console.log('📄 MongoDB not available, using JSON file');
+    console.error('❌ MongoDB initialization error:', error.message);
+    console.log('📄 Falling back to JSON file storage');
   }
 })();
 

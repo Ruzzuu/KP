@@ -16,11 +16,16 @@ export async function connectDB() {
   try {
     client = new MongoClient(uri);
     await client.connect();
-    db = client.db('pergunu'); // database name
-    console.log('✅ MongoDB connected');
+    
+    // Extract database name from URI or use default
+    const dbName = uri.includes('/pergunu_db?') ? 'pergunu_db' : 'pergunu_db';
+    db = client.db(dbName);
+    
+    console.log('✅ MongoDB connected to database:', dbName);
     return db;
   } catch (error) {
-    console.error('❌ MongoDB connection failed:', error);
+    console.error('❌ MongoDB connection failed:', error.message);
+    console.error('Connection URI pattern:', uri.substring(0, 30) + '...');
     return null;
   }
 }
