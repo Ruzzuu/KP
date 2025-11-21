@@ -34,10 +34,10 @@ class ApiService {
     this.timeout = 10000;                          // Request timeout (10 seconds)
     this.version = '2.0.0-secure-' + Date.now();      // Force cache refresh
     
-    // Only log version in development
-    if (isDevelopment) {
-      console.log('🆕 ApiService version:', this.version);
-    }
+    // Log version to verify we're using latest code
+    console.log('🆕 ApiService version:', this.version);
+    console.log('📡 API_URL:', this.API_URL);
+    console.log('📁 FILE_SERVER_URL:', this.FILE_SERVER_URL);
     
     // Security configuration dari environment variables
     this.saltRounds = parseInt(import.meta.env.VITE_BCRYPT_SALT_ROUNDS) || 12;
