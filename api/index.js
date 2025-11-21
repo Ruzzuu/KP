@@ -967,7 +967,8 @@ app.patch('/api/applications/:id', async (req, res) => {
     // Broadcast real-time update
     broadcastToClients('application-updated', updatedApp);
     
-    res.json(updatedApp);
+    // Return in format expected by frontend: { application: updatedApp }
+    res.json({ application: updatedApp });
   } catch (error) {
     console.error('Error updating application:', error);
     res.status(500).json({ error: 'Failed to update application' });
@@ -1236,6 +1237,109 @@ app.get('/uploads/images/:filename', (req, res) => {
     message: 'Images are now served from Cloudinary. Please update your image URLs.',
     filename: req.params.filename
   });
+});
+
+// ===== ADMIN MIGRATION ENDPOINT =====
+app.post('/api/admin/migrate', async (req, res) => {
+  try {
+    // Check if MongoDB is available
+    const db = getDB();
+    if (!db) {
+      return res.status(503).json({ 
+        error: 'MongoDB not connected',
+        message: 'Cannot migrate data without MongoDB connection'
+      });
+    }
+
+    // Read source data from db.json
+    const sourceData = readFileSync(DB_SOURCE, 'utf-8');
+    const data = JSON.parse(sourceData);
+    
+    const results = {};
+    
+    // Migrate users
+    if (data.users && data.users.length > 0) {
+      await db.collection('users').deleteMany({});
+      await db.collection('users').insertMany(data.users);
+      results.users = data.users.length;
+    }
+    
+    // Migrate news
+    if (data.news && data.news.length > 0) {
+      await db.collection('news').deleteMany({});
+      await db.collection('news').insertMany(data.news);
+      results.news = data.news.length;
+    }
+    
+    // Migrate beasiswa
+    if (data.beasiswa && data.beasiswa.length > 0) {
+      await db.collection('beasiswa').deleteMany({});
+      await db.collection('beasiswa').insertMany(data.beasiswa);
+      results.beasiswa = data.beasiswa.length;
+    }
+    
+    // Migrate applications
+    if (data.applications && data.applications.length > 0) {
+      await db.collection('applications').deleteMany({});
+      await db.collection('applications').insertMany(data.applications);
+      results.applications = data.applications.length;
+    }
+    
+    // Migrate beasiswa_applications
+    if (data.beasiswa_applications && data.beasiswa_applications.length > 0) {
+      await db.collection('beasiswa_applications').deleteMany({});
+      await db.collection('beasiswa_applications').insertMany(data.beasiswa_applications);
+      results.beasiswa_applications = data.beasiswa_applications.length;
+    }
+    
+    console.log('✅ Migration completed:', results);
+    
+    res.json({ 
+      success: true,
+      message: 'Data migrated successfully from db.json to MongoDB',
+      migrated: results
+    });
+  } catch (error) {
+    console.error('❌ Migration error:', error);
+    res.status(500).json({ 
+      error: 'Migration failed',
+      message: error.message 
+    });
+  }
+});
+
+// GET /api/admin/db-status - Check database status
+app.get('/api/admin/db-status', async (req, res) => {
+  try {
+    const db = getDB();
+    const status = {
+      useMongoDB,
+      isConnected: db !== null,
+      collections: {}
+    };
+    
+    if (db) {
+      // Get counts from MongoDB
+      status.collections.users = await db.collection('users').countDocuments();
+      status.collections.news = await db.collection('news').countDocuments();
+      status.collections.beasiswa = await db.collection('beasiswa').countDocuments();
+      status.collections.applications = await db.collection('applications').countDocuments();
+      status.collections.beasiswa_applications = await db.collection('beasiswa_applications').countDocuments();
+    } else {
+      // Get counts from JSON
+      const data = readDB();
+      status.collections.users = (data.users || []).length;
+      status.collections.news = (data.news || []).length;
+      status.collections.beasiswa = (data.beasiswa || []).length;
+      status.collections.applications = (data.applications || []).length;
+      status.collections.beasiswa_applications = (data.beasiswa_applications || []).length;
+    }
+    
+    res.json(status);
+  } catch (error) {
+    console.error('❌ DB status error:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // ===== HEALTH CHECK =====
