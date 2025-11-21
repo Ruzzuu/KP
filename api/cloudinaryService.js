@@ -1,10 +1,11 @@
 import { v2 as cloudinary } from 'cloudinary';
 
-// Configure Cloudinary
+// Configure Cloudinary with secure=false for SSL issues
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: false // Return HTTP URLs instead of HTTPS
 });
 
 // Upload image to Cloudinary
@@ -21,8 +22,9 @@ export const uploadImage = async (imageBuffer, filename) => {
       overwrite: true
     });
     
-    console.log('✅ Cloudinary upload success:', result.secure_url);
-    return result.secure_url;
+    // Return HTTP URL (url) instead of HTTPS (secure_url) for SSL issues
+    console.log('✅ Cloudinary upload success:', result.url);
+    return result.url;
   } catch (error) {
     console.error('❌ Cloudinary upload error:', error);
     throw error;
