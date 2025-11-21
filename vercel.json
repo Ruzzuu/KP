@@ -19,16 +19,9 @@
     }
   },
   "buildCommand": "npm run build",
-  "cleanUrls": true,
   "outputDirectory": "dist",
   "framework": "vite",
   "installCommand": "npm install",
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
-  ],
   "headers": [
     {
       "source": "/api/(.*)",
