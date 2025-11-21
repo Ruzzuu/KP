@@ -14,8 +14,7 @@
     "CLOUDINARY_API_SECRET": "N8SBdn4YQz_CYppX6jBRVPuEcCM"
   },
   "functions": {
-    "api/index.js": {
-      "runtime": "nodejs20.x",
+    "api/*.js": {
       "maxDuration": 10
     }
   },
