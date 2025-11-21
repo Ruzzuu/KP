@@ -340,11 +340,11 @@ export default function NewsManager() {
       let uploadedImagePath = formData.image; // Keep existing image if no new file
       
       if (formData.imageFile) {
-        // First, upload image to file-server
+        // First, upload image to file-server (now uploads to Cloudinary)
         const imageFormData = new FormData();
         imageFormData.append('image', formData.imageFile);
         
-        console.log('📷 Uploading image file to file-server:', formData.imageFile.name);
+        console.log('📷 Uploading image file to Cloudinary:', formData.imageFile.name);
         
         const imageUploadResponse = await fetch(`${FILE_SERVER}/upload-image`, {
           method: 'POST',
@@ -352,21 +352,22 @@ export default function NewsManager() {
         });
         
         if (!imageUploadResponse.ok) {
-          throw new Error('Failed to upload image');
+          throw new Error('Failed to upload image to Cloudinary');
         }
         
         const imageResult = await imageUploadResponse.json();
-        uploadedImagePath = imageResult.filename; // Store only filename
-        console.log('✅ Image uploaded successfully:', uploadedImagePath);
+        // Cloudinary returns full URL in 'url' or 'cloudinaryUrl' field
+        uploadedImagePath = imageResult.cloudinaryUrl || imageResult.url;
+        console.log('✅ Image uploaded to Cloudinary:', uploadedImagePath);
       }
 
-      // Now submit news data with image path
+      // Now submit news data with image URL (Cloudinary URL or existing)
       const newsData = {
         title: finalFormData.title,
         content: finalFormData.content,
         author: finalFormData.author || '',
         category: finalFormData.category,
-        image: uploadedImagePath // Use uploaded filename or existing path
+        image: uploadedImagePath // Use Cloudinary URL or existing URL
       };
 
       const url = editingId 
@@ -388,6 +389,7 @@ export default function NewsManager() {
         
         // Dispatch event untuk sinkronisasi gambar
         if (uploadedImagePath) {
+          // Cloudinary URLs are already full URLs starting with http
           const fullImageUrl = uploadedImagePath.startsWith('http') 
             ? uploadedImagePath 
             : `${FILE_SERVER}/uploads/images/${uploadedImagePath}`;

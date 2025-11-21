@@ -2,6 +2,7 @@
 // 📁 PERGUNU FILE SERVER
 // ===================================
 // Handles file uploads and downloads for certificates
+// Now with Cloudinary support for images
 
 import express from 'express';
 import multer from 'multer';
@@ -9,6 +10,7 @@ import cors from 'cors';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname, extname } from 'path';
 import { fileURLToPath } from 'url';
+import { uploadToCloudinary, deleteFromCloudinary, extractPublicId, isCloudinaryConfigured } from './api/cloudinaryService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -112,19 +114,8 @@ const upload = multer({
   }
 });
 
-// Image upload configuration
-const imageStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, imageUploadDir);
-  },
-  filename: (req, file, cb) => {
-    const timestamp = Date.now();
-    const randomString = Math.random().toString(36).substring(2, 15);
-    const extension = extname(file.originalname);
-    const filename = `${timestamp}_${randomString}${extension}`;
-    cb(null, filename);
-  }
-});
+// Image upload configuration - using memory storage for Cloudinary
+const imageStorage = multer.memoryStorage(); // Store in memory for Cloudinary upload
 
 const imageUpload = multer({
   storage: imageStorage,
@@ -184,23 +175,35 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Upload image for news
-app.post('/upload-image', imageUpload.single('image'), (req, res) => {
+// Upload image for news - now uses Cloudinary
+app.post('/upload-image', imageUpload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No image uploaded' });
     }
 
+    // Check if Cloudinary is configured
+    if (!isCloudinaryConfigured()) {
+      return res.status(500).json({ 
+        error: 'Cloudinary not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in environment variables.' 
+      });
+    }
+
+    // Upload to Cloudinary
+    const result = await uploadToCloudinary(req.file.buffer, 'news', req.file.originalname);
+
     res.json({
       success: true,
-      filename: req.file.filename,
+      filename: result.public_id,
       originalName: req.file.originalname,
       size: req.file.size,
-      url: `/uploads/images/${req.file.filename}`
+      url: result.secure_url,
+      cloudinaryUrl: result.secure_url,
+      publicId: result.public_id
     });
   } catch (error) {
     console.error('Error uploading image:', error);
-    res.status(500).json({ error: 'Failed to upload image' });
+    res.status(500).json({ error: 'Failed to upload image to Cloudinary' });
   }
 });
 
