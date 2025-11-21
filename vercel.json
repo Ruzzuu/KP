@@ -4,10 +4,12 @@
       "VITE_API_BASE_URL": "https://kp-mocha.vercel.app/api",
       "VITE_FILE_SERVER_URL": "https://kp-mocha.vercel.app",
       "VITE_CLOUDINARY_CLOUD_NAME": "dud8vu2an",
-      "VITE_CLOUDINARY_API_KEY": "265756497564172"
+      "VITE_CLOUDINARY_API_KEY": "265756497564172",
+      "NODE_ENV": "production"
     }
   },
   "buildCommand": "npm run build",
+  "cleanUrls": true,
   "outputDirectory": "dist",
   "framework": "vite",
   "installCommand": "npm install",
