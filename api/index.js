@@ -42,11 +42,17 @@ const broadcastToClients = (event, data) => {
 // Secure CORS configuration with environment-based origins
 const corsOptions = {
   origin: (origin, callback) => {
+    // Log for debugging
+    console.log('🔍 CORS check - Origin:', origin, 'NODE_ENV:', process.env.NODE_ENV);
+    
     // Get allowed origins from environment
     const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean);
     
-    // Allow same-origin requests (no origin header)
-    if (!origin) return callback(null, true);
+    // Allow same-origin requests (no origin header) - CRITICAL for Vercel
+    if (!origin) {
+      console.log('✅ CORS: Allowing same-origin request (no origin header)');
+      return callback(null, true);
+    }
     
     try {
       const url = new URL(origin);
@@ -54,7 +60,10 @@ const corsOptions = {
       // In development, allow localhost origins
       if (process.env.NODE_ENV !== 'production') {
         const isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
-        if (isLocalhost) return callback(null, true);
+        if (isLocalhost) {
+          console.log('✅ CORS: Allowing localhost origin');
+          return callback(null, true);
+        }
       }
       
       // Check against whitelist of allowed origins
@@ -66,19 +75,24 @@ const corsOptions = {
         'https://kp-ue5wmj0ed-fairuzs-projects-d3e0b8cf.vercel.app' // Preview deployment domain
       ].filter(Boolean));
       
+      console.log('🔍 CORS allowList:', Array.from(allowList));
+      
       if (allowList.has(origin)) {
+        console.log('✅ CORS: Origin in allowlist');
         return callback(null, true);
       }
       
-      // Log rejected origins in development for debugging
-      if (process.env.NODE_ENV !== 'production') {
-        console.warn(`CORS: Rejected origin ${origin}`);
+      // In production, be more permissive with Vercel preview URLs
+      if (origin.includes('vercel.app')) {
+        console.log('✅ CORS: Allowing Vercel domain');
+        return callback(null, true);
       }
       
+      // Log rejected origins for debugging
+      console.warn(`❌ CORS: Rejected origin ${origin}`);
+      
     } catch (error) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.error('Invalid origin URL:', error.message);
-      }
+      console.error('❌ CORS: Invalid origin URL:', error.message);
     }
     
     return callback(new Error('Not allowed by CORS'), false);
