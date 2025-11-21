@@ -1014,12 +1014,30 @@ app.delete('/api/users/:id', (req, res) => {
 
 // ===== IMAGE UPLOAD ENDPOINTS =====
 import { uploadImage } from './cloudinaryService.js';
+import multer from 'multer';
+
+// Configure multer for memory storage
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    // Accept images only
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('Only image files are allowed!'), false);
+    }
+    cb(null, true);
+  }
+});
 
 // POST /api/upload/image - Upload image to Cloudinary
-app.post('/api/upload/image', express.raw({ limit: '10mb', type: 'image/*' }), async (req, res) => {
+app.post('/api/upload/image', upload.single('image'), async (req, res) => {
   try {
-    if (!req.body || req.body.length === 0) {
-      return res.status(400).json({ error: 'No image data provided' });
+    console.log('📸 === Image Upload Request ===');
+    console.log('File received:', req.file ? 'YES' : 'NO');
+    
+    if (!req.file || !req.file.buffer) {
+      console.error('❌ No image file in request');
+      return res.status(400).json({ error: 'No image file provided' });
     }
 
     // Generate unique filename
@@ -1028,13 +1046,16 @@ app.post('/api/upload/image', express.raw({ limit: '10mb', type: 'image/*' }), a
     const filename = `${timestamp}_${randomString}`;
     
     console.log('📸 Uploading image to Cloudinary:', {
-      size: req.body.length,
-      type: req.headers['content-type'],
-      filename
+      originalName: req.file.originalname,
+      size: req.file.size,
+      mimetype: req.file.mimetype,
+      generatedFilename: filename
     });
 
     // Upload to Cloudinary
-    const cloudinaryUrl = await uploadImage(req.body, filename);
+    const cloudinaryUrl = await uploadImage(req.file.buffer, filename);
+    
+    console.log('✅ Image uploaded successfully to:', cloudinaryUrl);
     
     res.json({
       success: true,

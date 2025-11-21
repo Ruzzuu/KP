@@ -8,6 +8,11 @@
       "NODE_ENV": "production"
     }
   },
+  "env": {
+    "CLOUDINARY_CLOUD_NAME": "dud8vu2an",
+    "CLOUDINARY_API_KEY": "265756497564172",
+    "CLOUDINARY_API_SECRET": "@cloudinary_api_secret"
+  },
   "buildCommand": "npm run build",
   "cleanUrls": true,
   "outputDirectory": "dist",
