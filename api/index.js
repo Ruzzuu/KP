@@ -135,13 +135,23 @@ app.get('/api/news/events', (req, res) => {
 });
 
 // ===== DATABASE FUNCTIONS =====
-const DB_PATH = join(__dirname, 'db.json');
+// Use /tmp in Vercel production (writable), local path in dev
+const isVercel = process.env.VERCEL === '1';
+const DB_SOURCE = join(__dirname, 'db.json');
+const DB_PATH = isVercel ? '/tmp/db.json' : DB_SOURCE;
 
 // Read database
 const readDB = () => {
   try {
     console.log('🔍 Attempting to read database from:', DB_PATH);
-    console.log('🔍 File exists:', existsSync(DB_PATH));
+    console.log('🔍 Vercel environment:', isVercel);
+    
+    // In Vercel, copy source db.json to /tmp on first run
+    if (isVercel && !existsSync(DB_PATH) && existsSync(DB_SOURCE)) {
+      console.log('📋 Copying source db.json to /tmp for Vercel...');
+      const sourceData = readFileSync(DB_SOURCE, 'utf8');
+      writeFileSync(DB_PATH, sourceData);
+    }
     
     if (!existsSync(DB_PATH)) {
       console.log('❌ Database file not found at:', DB_PATH);
