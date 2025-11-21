@@ -1067,14 +1067,51 @@ app.post('/api/upload/image', upload.single('image'), async (req, res) => {
     
     console.log('✅ Image uploaded successfully to:', cloudinaryUrl);
     
+    // Return proxied URL to bypass SSL issues
+    const baseUrl = process.env.VERCEL ? 'https://kp-mocha.vercel.app' : `http://localhost:${PORT}`;
+    const proxiedUrl = `${baseUrl}/api/proxy-image?url=${encodeURIComponent(cloudinaryUrl)}`;
+    
     res.json({
       success: true,
       filename: filename,
-      url: cloudinaryUrl // Return Cloudinary HTTPS URL
+      url: proxiedUrl, // Return proxied URL
+      originalUrl: cloudinaryUrl // Keep original for reference
     });
   } catch (error) {
     console.error('❌ Error uploading image:', error);
     res.status(500).json({ error: 'Failed to upload image: ' + error.message });
+  }
+});
+
+// GET /api/proxy-image - Proxy Cloudinary images to bypass SSL issues
+app.get('/api/proxy-image', async (req, res) => {
+  try {
+    const imageUrl = req.query.url;
+    if (!imageUrl) {
+      return res.status(400).json({ error: 'URL parameter required' });
+    }
+
+    // Fetch image from Cloudinary via server (no SSL issues server-side)
+    const https = await import('https');
+    const http = await import('http');
+    
+    const protocol = imageUrl.startsWith('https') ? https : http;
+    
+    protocol.get(imageUrl, (imageResponse) => {
+      // Set headers
+      res.setHeader('Content-Type', imageResponse.headers['content-type'] || 'image/png');
+      res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache 1 year
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      // Pipe image data to response
+      imageResponse.pipe(res);
+    }).on('error', (err) => {
+      console.error('❌ Proxy image error:', err);
+      res.status(500).json({ error: 'Failed to proxy image' });
+    });
+  } catch (error) {
+    console.error('❌ Proxy image error:', error);
+    res.status(500).json({ error: 'Failed to proxy image' });
   }
 });
 
