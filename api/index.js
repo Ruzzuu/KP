@@ -8,10 +8,10 @@ import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import multer from 'multer';
+import { v2 as cloudinary } from 'cloudinary';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { uploadToCloudinary, deleteFromCloudinary, extractPublicId, isCloudinaryConfigured } from './cloudinaryService.js';
 
 // Initialize Express app
 const app = express();
@@ -95,6 +95,46 @@ app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// ===== CLOUDINARY CONFIGURATION =====
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true
+});
+
+// Cloudinary helper functions
+const isCloudinaryConfigured = () => {
+  return process.env.CLOUDINARY_CLOUD_NAME && 
+         process.env.CLOUDINARY_API_KEY && 
+         process.env.CLOUDINARY_API_SECRET;
+};
+
+const uploadToCloudinary = async (fileBuffer, folder = 'uploads', originalname = '') => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: `pergunu/${folder}`,
+        resource_type: 'auto',
+        use_filename: true,
+        unique_filename: true,
+        overwrite: false,
+        public_id: originalname ? originalname.split('.')[0] : undefined
+      },
+      (error, result) => {
+        if (error) {
+          console.error('❌ Cloudinary upload error:', error);
+          reject(error);
+        } else {
+          console.log('✅ Cloudinary upload successful:', result.secure_url);
+          resolve(result);
+        }
+      }
+    );
+    uploadStream.end(fileBuffer);
+  });
+};
 
 // ===== MULTER CONFIGURATION =====
 // Image upload configuration - using memory storage for Cloudinary
