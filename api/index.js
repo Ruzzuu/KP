@@ -1257,13 +1257,17 @@ app.get('/uploads/images/:filename', (req, res) => {
 // ===== ADMIN MIGRATION ENDPOINT =====
 app.post('/api/admin/migrate', async (req, res) => {
   try {
-    // Check if MongoDB is available
-    const db = getDB();
+    // Ensure MongoDB connection (reconnect if needed)
+    let db = getDB();
     if (!db) {
-      return res.status(503).json({ 
-        error: 'MongoDB not connected',
-        message: 'Cannot migrate data without MongoDB connection'
-      });
+      console.log('🔄 MongoDB not connected, attempting to connect...');
+      db = await connectDB();
+      if (!db) {
+        return res.status(503).json({ 
+          error: 'MongoDB not connected',
+          message: 'Cannot migrate data without MongoDB connection. MONGODB_URI may be missing or invalid.'
+        });
+      }
     }
 
     // Read source data from db.json
