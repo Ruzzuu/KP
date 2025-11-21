@@ -7,11 +7,12 @@ import { BrowserRouter } from "react-router-dom"; // Router untuk navigasi antar
 import "./index.css";                           // Import global CSS styling
 
 // Log environment variables for debugging
-console.log('🔧 Environment Check [BUILD v0.0.1]:', {
+console.log('🔧 Environment Check [BUILD v0.0.2 - CACHE BUSTED]:', {
   API_BASE: import.meta.env.VITE_API_BASE_URL || 'NOT SET',
   FILE_SERVER: import.meta.env.VITE_FILE_SERVER_URL || 'NOT SET',
   MODE: import.meta.env.MODE,
-  BUILD_TIME: new Date().toISOString()
+  BUILD_TIME: new Date().toISOString(),
+  CACHE_BUST: 'ce016a5-force-refresh'
 });
 
 // ENTRY POINT APLIKASI REACT
