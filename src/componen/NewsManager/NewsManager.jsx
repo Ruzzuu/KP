@@ -340,19 +340,21 @@ export default function NewsManager() {
       let uploadedImagePath = formData.image; // Keep existing image if no new file
       
       if (formData.imageFile) {
-        // First, upload image to file-server (now uploads to Cloudinary)
+        // First, upload image to API (uploads to Cloudinary)
         const imageFormData = new FormData();
         imageFormData.append('image', formData.imageFile);
         
         console.log('📷 Uploading image file to Cloudinary:', formData.imageFile.name);
         
-        const imageUploadResponse = await fetch(`${FILE_SERVER}/upload-image`, {
+        const imageUploadResponse = await fetch(`${API_BASE_URL}/upload-image`, {
           method: 'POST',
           body: imageFormData
         });
         
         if (!imageUploadResponse.ok) {
-          throw new Error('Failed to upload image to Cloudinary');
+          const errorData = await imageUploadResponse.json().catch(() => ({}));
+          console.error('❌ Upload error:', errorData);
+          throw new Error(errorData.error || 'Failed to upload image to Cloudinary');
         }
         
         const imageResult = await imageUploadResponse.json();

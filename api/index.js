@@ -7,9 +7,11 @@
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
+import multer from 'multer';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { uploadToCloudinary, deleteFromCloudinary, extractPublicId, isCloudinaryConfigured } from './cloudinaryService.js';
 
 // Initialize Express app
 const app = express();
@@ -94,6 +96,25 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// ===== MULTER CONFIGURATION =====
+// Image upload configuration - using memory storage for Cloudinary
+const imageStorage = multer.memoryStorage(); // Store in memory for Cloudinary upload
+
+const imageUpload = multer({
+  storage: imageStorage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files (JPEG, PNG, GIF, WebP) are allowed'), false);
+    }
+  }
+});
+
 // ===== SSE ENDPOINT =====
 app.get('/api/news/events', (req, res) => {
   console.log('🔔 New SSE client connected');
@@ -162,6 +183,45 @@ const writeDB = (data) => {
     return false;
   }
 };
+
+// ===== FILE UPLOAD ENDPOINTS =====
+
+// POST /api/upload-image - Upload image to Cloudinary
+app.post('/api/upload-image', imageUpload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image uploaded' });
+    }
+
+    // Check if Cloudinary is configured
+    if (!isCloudinaryConfigured()) {
+      console.error('❌ Cloudinary not configured');
+      return res.status(500).json({ 
+        error: 'Cloudinary not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in environment variables.' 
+      });
+    }
+
+    console.log('📤 Uploading image to Cloudinary:', req.file.originalname);
+    
+    // Upload to Cloudinary
+    const result = await uploadToCloudinary(req.file.buffer, 'news', req.file.originalname);
+
+    console.log('✅ Image uploaded successfully:', result.secure_url);
+
+    res.json({
+      success: true,
+      filename: result.public_id,
+      originalName: req.file.originalname,
+      size: req.file.size,
+      url: result.secure_url,
+      cloudinaryUrl: result.secure_url,
+      publicId: result.public_id
+    });
+  } catch (error) {
+    console.error('❌ Error uploading image:', error);
+    res.status(500).json({ error: 'Failed to upload image to Cloudinary', details: error.message });
+  }
+});
 
 // ===== NEWS ENDPOINTS =====
 
