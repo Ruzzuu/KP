@@ -195,10 +195,11 @@ const readDB = () => {
   try {
     console.log('🔍 Attempting to read database from:', DB_PATH);
     console.log('🔍 Vercel environment:', isVercel);
+    console.log('🔍 MongoDB enabled:', useMongoDB);
     
-    // In Vercel, copy source db.json to /tmp on first run
-    if (isVercel && !existsSync(DB_PATH) && existsSync(DB_SOURCE)) {
-      console.log('📋 Copying source db.json to /tmp for Vercel...');
+    // ONLY copy source if MongoDB is NOT available
+    if (!useMongoDB && isVercel && !existsSync(DB_PATH) && existsSync(DB_SOURCE)) {
+      console.log('📋 MongoDB not available, copying source db.json to /tmp for Vercel...');
       const sourceData = readFileSync(DB_SOURCE, 'utf8');
       writeFileSync(DB_PATH, sourceData);
     }
