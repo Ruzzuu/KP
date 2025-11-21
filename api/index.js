@@ -7,8 +7,6 @@
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
-import multer from 'multer';
-import { v2 as cloudinary } from 'cloudinary';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -96,65 +94,6 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// ===== CLOUDINARY CONFIGURATION =====
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true
-});
-
-// Cloudinary helper functions
-const isCloudinaryConfigured = () => {
-  return process.env.CLOUDINARY_CLOUD_NAME && 
-         process.env.CLOUDINARY_API_KEY && 
-         process.env.CLOUDINARY_API_SECRET;
-};
-
-const uploadToCloudinary = async (fileBuffer, folder = 'uploads', originalname = '') => {
-  return new Promise((resolve, reject) => {
-    const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        folder: `pergunu/${folder}`,
-        resource_type: 'auto',
-        use_filename: true,
-        unique_filename: true,
-        overwrite: false,
-        public_id: originalname ? originalname.split('.')[0] : undefined
-      },
-      (error, result) => {
-        if (error) {
-          console.error('❌ Cloudinary upload error:', error);
-          reject(error);
-        } else {
-          console.log('✅ Cloudinary upload successful:', result.secure_url);
-          resolve(result);
-        }
-      }
-    );
-    uploadStream.end(fileBuffer);
-  });
-};
-
-// ===== MULTER CONFIGURATION =====
-// Image upload configuration - using memory storage for Cloudinary
-const imageStorage = multer.memoryStorage(); // Store in memory for Cloudinary upload
-
-const imageUpload = multer({
-  storage: imageStorage,
-  limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    if (allowedMimes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image files (JPEG, PNG, GIF, WebP) are allowed'), false);
-    }
-  }
-});
-
 // ===== SSE ENDPOINT =====
 app.get('/api/news/events', (req, res) => {
   console.log('🔔 New SSE client connected');
@@ -223,45 +162,6 @@ const writeDB = (data) => {
     return false;
   }
 };
-
-// ===== FILE UPLOAD ENDPOINTS =====
-
-// POST /api/upload-image - Upload image to Cloudinary
-app.post('/api/upload-image', imageUpload.single('image'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No image uploaded' });
-    }
-
-    // Check if Cloudinary is configured
-    if (!isCloudinaryConfigured()) {
-      console.error('❌ Cloudinary not configured');
-      return res.status(500).json({ 
-        error: 'Cloudinary not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in environment variables.' 
-      });
-    }
-
-    console.log('📤 Uploading image to Cloudinary:', req.file.originalname);
-    
-    // Upload to Cloudinary
-    const result = await uploadToCloudinary(req.file.buffer, 'news', req.file.originalname);
-
-    console.log('✅ Image uploaded successfully:', result.secure_url);
-
-    res.json({
-      success: true,
-      filename: result.public_id,
-      originalName: req.file.originalname,
-      size: req.file.size,
-      url: result.secure_url,
-      cloudinaryUrl: result.secure_url,
-      publicId: result.public_id
-    });
-  } catch (error) {
-    console.error('❌ Error uploading image:', error);
-    res.status(500).json({ error: 'Failed to upload image to Cloudinary', details: error.message });
-  }
-});
 
 // ===== NEWS ENDPOINTS =====
 
@@ -1096,6 +996,51 @@ app.delete('/api/users/:id', (req, res) => {
   } else {
     res.status(500).json({ error: 'Failed to delete user' });
   }
+});
+
+// ===== IMAGE UPLOAD ENDPOINTS =====
+import { uploadImage } from './cloudinaryService.js';
+
+// POST /api/upload/image - Upload image to Cloudinary
+app.post('/api/upload/image', express.raw({ limit: '10mb', type: 'image/*' }), async (req, res) => {
+  try {
+    if (!req.body || req.body.length === 0) {
+      return res.status(400).json({ error: 'No image data provided' });
+    }
+
+    // Generate unique filename
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 15);
+    const filename = `${timestamp}_${randomString}`;
+    
+    console.log('📸 Uploading image to Cloudinary:', {
+      size: req.body.length,
+      type: req.headers['content-type'],
+      filename
+    });
+
+    // Upload to Cloudinary
+    const cloudinaryUrl = await uploadImage(req.body, filename);
+    
+    res.json({
+      success: true,
+      filename: filename,
+      url: cloudinaryUrl // Return Cloudinary HTTPS URL
+    });
+  } catch (error) {
+    console.error('❌ Error uploading image:', error);
+    res.status(500).json({ error: 'Failed to upload image: ' + error.message });
+  }
+});
+
+// GET /uploads/images/:filename - Redirect for backward compatibility
+app.get('/uploads/images/:filename', (req, res) => {
+  console.log('⚠️ Old image URL accessed:', req.params.filename);
+  res.status(410).json({
+    error: 'This endpoint is deprecated',
+    message: 'Images are now served from Cloudinary. Please update your image URLs.',
+    filename: req.params.filename
+  });
 });
 
 // ===== HEALTH CHECK =====

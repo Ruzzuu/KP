@@ -1,6 +1,5 @@
 // App.jsx - Main Application Component
 // Komponen utama yang mengatur routing dan struktur aplikasi PERGUNU
-// Build: v1.0.1 - Cloudinary Integration
 import React from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";

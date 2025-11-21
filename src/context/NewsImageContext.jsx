@@ -48,14 +48,10 @@ export const NewsImageProvider = ({ children }) => {
           // Konversi image path ke full URL jika diperlukan
           let imageUrl = featuredNews.image;
           
-          // If already a full Cloudinary URL or HTTP URL, use as-is
-          if (imageUrl.startsWith('http')) {
-            // Already a full URL (Cloudinary or other CDN)
-            imageUrl = imageUrl;
-          } else if (imageUrl.startsWith('/uploads/')) {
+          if (imageUrl.startsWith('/uploads/')) {
             imageUrl = `${FILE_SERVER}${imageUrl}`;
-          } else if (imageUrl && !imageUrl.includes('/') && !imageUrl.startsWith('/src/')) {
-            // Handle old uploaded image files (filename only) - point to file-server
+          } else if (imageUrl && !imageUrl.includes('/') && !imageUrl.startsWith('http') && !imageUrl.startsWith('/src/')) {
+            // Handle uploaded image files (filename only) - point to file-server
             imageUrl = `${FILE_SERVER}/uploads/images/${imageUrl}`;
           }
           
