@@ -1,3 +1,6 @@
 // Catch-all serverless function for Vercel
-// This re-exports the Express app from index.js to handle all /api/* routes
-export { default } from './index.js';
+// This wraps the Express app from index.js to handle all /api/* routes properly
+import app from './index.js';
+
+// Export the Express app as serverless function handler
+export default app;
