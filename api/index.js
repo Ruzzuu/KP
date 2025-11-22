@@ -138,27 +138,53 @@ app.get('/api/news/events', (req, res) => {
 // ===== DATABASE FUNCTIONS =====
 // MongoDB connection state
 let useMongoDB = false;
+let mongoInitialized = false;
 
-// Initialize MongoDB connection
+// Initialize MongoDB connection with retry
 (async () => {
-  try {
-    console.log('🔄 Attempting to connect to MongoDB...');
-    console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
-    
-    const db = await connectDB();
-    if (db) {
-      useMongoDB = true;
-      console.log('🍃 Using MongoDB for persistent storage');
+  const maxRetries = 3;
+  let retries = 0;
+  
+  while (retries < maxRetries && !mongoInitialized) {
+    try {
+      console.log(`🔄 Attempting to connect to MongoDB (attempt ${retries + 1}/${maxRetries})...`);
+      console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
       
-      // Test connection by listing collections
-      const collections = await db.listCollections().toArray();
-      console.log('📊 Available collections:', collections.map(c => c.name).join(', ') || 'none');
-    } else {
-      console.log('📄 Using JSON file for storage (MongoDB connection returned null)');
+      const db = await connectDB();
+      if (db) {
+        useMongoDB = true;
+        mongoInitialized = true;
+        console.log('🍃 Using MongoDB for persistent storage');
+        
+        // Test connection by listing collections
+        const collections = await db.listCollections().toArray();
+        console.log('📊 Available collections:', collections.map(c => c.name).join(', ') || 'none');
+        
+        // Count documents in each collection
+        for (const coll of ['users', 'news', 'applications', 'beasiswa']) {
+          try {
+            const count = await db.collection(coll).countDocuments();
+            console.log(`  • ${coll}: ${count} documents`);
+          } catch (e) {
+            console.log(`  • ${coll}: collection not found`);
+          }
+        }
+        break;
+      } else {
+        console.log('⚠️ MongoDB connection returned null, retrying...');
+      }
+    } catch (error) {
+      console.error(`❌ MongoDB initialization error (attempt ${retries + 1}):`, error.message);
     }
-  } catch (error) {
-    console.error('❌ MongoDB initialization error:', error.message);
-    console.log('📄 Falling back to JSON file storage');
+    
+    retries++;
+    if (retries < maxRetries) {
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
+    }
+  }
+  
+  if (!mongoInitialized) {
+    console.log('📄 Falling back to JSON file storage after all retries failed');
   }
 })();
 
