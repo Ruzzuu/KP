@@ -277,7 +277,21 @@ const SidebarWidget = ({
 
   // Handle view all button
   const handleViewAll = () => {
-    navigate('/berita');
+    // Navigate ke halaman berita, jika sudah di halaman yang sama, scroll ke section
+    const currentPath = window.location.pathname;
+    if (currentPath === '/' || currentPath === '/home') {
+      // Jika di homepage, scroll ke section berita
+      const beritaSection = document.getElementById('berita');
+      if (beritaSection) {
+        beritaSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        // Fallback: navigate ke /berita
+        navigate('/berita');
+      }
+    } else {
+      // Jika di halaman lain, navigate ke halaman berita
+      navigate('/berita');
+    }
   };
 
   if (loading) {
