@@ -386,30 +386,32 @@ app.delete('/api/news/:id', async (req, res) => {
 });
 
 // PUT /api/news/:id/feature - Set featured status
-app.put('/api/news/:id/feature', (req, res) => {
-  const db = readDB();
-  const newsIndex = db.news.findIndex(n => n.id === req.params.id);
-  
-  if (newsIndex === -1) {
-    return res.status(404).json({ error: 'News not found' });
-  }
+app.put('/api/news/:id/feature', async (req, res) => {
+  try {
+    const news = await getCollection('news');
+    const newsIndex = news.findIndex(n => n.id === req.params.id);
+    
+    if (newsIndex === -1) {
+      return res.status(404).json({ error: 'News not found' });
+    }
 
-  // Jika akan set featured true, maka reset yang lain menjadi false
-  if (req.body.featured === true) {
-    db.news.forEach((news, index) => {
-      if (index !== newsIndex) {
-        news.featured = false;
-      }
-    });
-  }
-  
-  db.news[newsIndex].featured = req.body.featured;
-  db.news[newsIndex].updatedAt = new Date().toISOString();
-  
-  if (writeDB(db)) {
-    broadcastToClients('news-featured', db.news[newsIndex]);
-    res.json(db.news[newsIndex]);
-  } else {
+    // Jika akan set featured true, maka reset yang lain menjadi false
+    if (req.body.featured === true) {
+      news.forEach((item, index) => {
+        if (index !== newsIndex) {
+          item.featured = false;
+        }
+      });
+    }
+    
+    news[newsIndex].featured = req.body.featured;
+    news[newsIndex].updatedAt = new Date().toISOString();
+    
+    await saveCollection('news', news);
+    broadcastToClients('news-featured', news[newsIndex]);
+    res.json(news[newsIndex]);
+  } catch (error) {
+    console.error('Error updating featured status:', error);
     res.status(500).json({ error: 'Failed to update featured status' });
   }
 });
@@ -418,182 +420,195 @@ app.put('/api/news/:id/feature', (req, res) => {
 
 // POST /api/register - User registration
 app.post('/api/register', async (req, res) => {
-  const db = readDB();
-  const { email, password, fullName } = req.body;
-  
-  // Check if user already exists
-  const existingUser = db.users.find(u => u.email === email);
-  if (existingUser) {
-    return res.status(400).json({ error: 'User already exists' });
-  }
-  
-  // Hash password
-  const hashedPassword = await bcrypt.hash(password, 10);
-  
-  const newUser = {
-    id: Date.now().toString(),
-    email,
-    password: hashedPassword,
-    fullName,
-    role: 'user',
-    createdAt: new Date().toISOString()
-  };
-  
-  db.users.push(newUser);
-  
-  if (writeDB(db)) {
+  try {
+    const users = await getCollection('users');
+    const { email, password, fullName } = req.body;
+    
+    // Check if user already exists
+    const existingUser = users.find(u => u.email === email);
+    if (existingUser) {
+      return res.status(400).json({ error: 'User already exists' });
+    }
+    
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    const newUser = {
+      id: Date.now().toString(),
+      email,
+      password: hashedPassword,
+      fullName,
+      role: 'user',
+      createdAt: new Date().toISOString()
+    };
+    
+    users.push(newUser);
+    await saveCollection('users', users);
+    
     const { password: _, ...userWithoutPassword } = newUser;
     res.status(201).json(userWithoutPassword);
-  } else {
+  } catch (error) {
+    console.error('Error creating user:', error);
     res.status(500).json({ error: 'Failed to create user' });
   }
 });
 
 // POST /api/login - User login (email only)
 app.post('/api/login', async (req, res) => {
-  const db = readDB();
-  const { email, password } = req.body;
-  
-  const user = db.users.find(u => u.email === email);
-  if (!user) {
-    return res.status(401).json({ error: 'Invalid credentials' });
+  try {
+    const users = await getCollection('users');
+    const { email, password } = req.body;
+    
+    const user = users.find(u => u.email === email);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    // Create session
+    const sessionId = Date.now().toString() + Math.random().toString(36);
+    const session = {
+      id: sessionId,
+      userId: user.id,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
+    };
+    
+    const sessions = await getCollection('sessions');
+    sessions.push(session);
+    await saveCollection('sessions', sessions);
+    
+    const { password: _pwd, ...userWithoutPassword } = user;
+    res.json({ user: userWithoutPassword, sessionId });
+  } catch (error) {
+    console.error('Error during login:', error);
+    res.status(500).json({ error: 'Login failed' });
   }
-  
-  const validPassword = await bcrypt.compare(password, user.password);
-  if (!validPassword) {
-    return res.status(401).json({ error: 'Invalid credentials' });
-  }
-  
-  // Create session
-  const sessionId = Date.now().toString() + Math.random().toString(36);
-  const session = {
-    id: sessionId,
-    userId: user.id,
-    createdAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
-  };
-  
-  if (!db.sessions) db.sessions = [];
-  db.sessions.push(session);
-  writeDB(db);
-  
-  const { password: _pwd, ...userWithoutPassword } = user;
-  res.json({ user: userWithoutPassword, sessionId });
 });
 
 // ===== AUTH ENDPOINTS =====
 
 // POST /api/auth/login - User login (username or email)
 app.post('/api/auth/login', async (req, res) => {
-  console.log('🔐 Login attempt:', req.body);
-  const db = readDB();
-  const { username, password } = req.body;
-  
-  // Find user by username or email
-  const user = db.users.find(u => 
-    u.username === username || 
-    u.email === username
-  );
-  
-  if (!user) {
-    console.log('❌ User not found:', username);
-    return res.status(401).json({ error: 'Invalid credentials' });
+  try {
+    console.log('🔐 Login attempt:', req.body);
+    const users = await getCollection('users');
+    const { username, password } = req.body;
+    
+    // Find user by username or email
+    const user = users.find(u => 
+      u.username === username || 
+      u.email === username
+    );
+    
+    if (!user) {
+      console.log('❌ User not found:', username);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    console.log('👤 Found user:', user.username, 'Email:', user.email);
+    
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      console.log('❌ Invalid password for user:', user.username);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    console.log('✅ Password valid for user:', user.username);
+    
+    // Create session
+    const sessionId = Date.now().toString() + Math.random().toString(36);
+    const session = {
+      id: sessionId,
+      userId: user.id,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
+    };
+    
+    const sessions = await getCollection('sessions');
+    sessions.push(session);
+    await saveCollection('sessions', sessions);
+    
+    const { password: _pwd, ...userWithoutPassword } = user;
+    res.json({ 
+      success: true,
+      user: userWithoutPassword, 
+      token: sessionId,
+      message: `Welcome back, ${user.fullName}!`
+    });
+  } catch (error) {
+    console.error('Error during auth login:', error);
+    res.status(500).json({ error: 'Login failed' });
   }
-  
-  console.log('👤 Found user:', user.username, 'Email:', user.email);
-  
-  const validPassword = await bcrypt.compare(password, user.password);
-  if (!validPassword) {
-    console.log('❌ Invalid password for user:', user.username);
-    return res.status(401).json({ error: 'Invalid credentials' });
-  }
-  
-  console.log('✅ Password valid for user:', user.username);
-  
-  // Create session
-  const sessionId = Date.now().toString() + Math.random().toString(36);
-  const session = {
-    id: sessionId,
-    userId: user.id,
-    createdAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
-  };
-  
-  if (!db.sessions) db.sessions = [];
-  db.sessions.push(session);
-  writeDB(db);
-  
-  const { password: _pwd, ...userWithoutPassword } = user;
-  res.json({ 
-    success: true,
-    user: userWithoutPassword, 
-    token: sessionId,
-    message: `Welcome back, ${user.fullName}!`
-  });
 });
 
 // POST /api/auth/register - User registration
 app.post('/api/auth/register', async (req, res) => {
-  console.log('📝 Registration attempt:', req.body);
-  const db = readDB();
-  const { email, password, fullName, username } = req.body;
+  try {
+    console.log('📝 Registration attempt:', req.body);
+    const users = await getCollection('users');
+    const { email, password, fullName, username } = req.body;
+    
+    // NEW LOGIC: Block registration if email already exists (no update allowed)
+    const registeredEmailCheck = users.find(u => u.email === email);
+    if (registeredEmailCheck) {
+      console.log('❌ Registration blocked: Email already registered:', email);
+      return res.status(409).json({ 
+        error: 'Email already registered',
+        message: 'This email is already in use. Please use a different email address.',
+        type: 'EMAIL_ALREADY_EXISTS'
+      });
+    }
   
-  // NEW LOGIC: Block registration if email already exists (no update allowed)
-  const registeredEmailCheck = db.users.find(u => u.email === email);
-  if (registeredEmailCheck) {
-    console.log('❌ Registration blocked: Email already registered:', email);
-    return res.status(409).json({ 
-      error: 'Email already registered',
-      message: 'This email is already in use. Please use a different email address.',
-      type: 'EMAIL_ALREADY_EXISTS'
-    });
-  }
-  
-  // Check if USERNAME already exists (different from email check)
-  const existingUserByUsername = db.users.find(u => u.username === username);
-  if (existingUserByUsername) {
-    // Username conflict - let frontend retry with different username
-    return res.status(409).json({ 
-      error: 'Username already exists',
-      existingUser: {
-        id: existingUserByUsername.id,
-        email: existingUserByUsername.email,
-        username: existingUserByUsername.username,
-        fullName: existingUserByUsername.fullName
-      }
-    });
-  }
-  
-  // Hash password
-  const hashedPassword = await bcrypt.hash(password, 10);
-  
-  const newUser = {
-    id: Date.now().toString(),
-    fullName,
-    email,
-    username,
-    password: hashedPassword,
-    createdAt: new Date().toISOString(),
-    role: 'user',
-    certificates: [],
-    downloads: 0,
-    lastDownload: null,
-    downloadHistory: [],
-    profileImage: `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=0F7536&color=fff`
-  };
-  
-  db.users.push(newUser);
-  const success = writeDB(db);
-  
-  if (success) {
+    // Check if USERNAME already exists (different from email check)
+    const existingUserByUsername = users.find(u => u.username === username);
+    if (existingUserByUsername) {
+      // Username conflict - let frontend retry with different username
+      return res.status(409).json({ 
+        error: 'Username already exists',
+        existingUser: {
+          id: existingUserByUsername.id,
+          email: existingUserByUsername.email,
+          username: existingUserByUsername.username,
+          fullName: existingUserByUsername.fullName
+        }
+      });
+    }
+    
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    const newUser = {
+      id: Date.now().toString(),
+      fullName,
+      email,
+      username,
+      password: hashedPassword,
+      createdAt: new Date().toISOString(),
+      role: 'user',
+      certificates: [],
+      downloads: 0,
+      lastDownload: null,
+      downloadHistory: [],
+      profileImage: `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=0F7536&color=fff`
+    };
+    
+    users.push(newUser);
+    await saveCollection('users', users);
+    
     const { password: _pwd, ...userWithoutPassword } = newUser;
     res.status(201).json({
       success: true,
       user: userWithoutPassword,
       message: 'User registered successfully'
     });
-  } else {
-    res.status(500).json({ error: 'Failed to create user' });
+  } catch (error) {
+    console.error('Error during registration:', error);
+    res.status(500).json({ error: 'Registration failed' });
   }
 });
 
@@ -870,23 +885,24 @@ app.put('/api/beasiswa-applications/:id/status', async (req, res) => {
 // ===== APPLICATION ENDPOINTS =====
 
 // POST /api/applications - Submit application
-app.post('/api/applications', (req, res) => {
-  const db = readDB();
-  
-  const newApplication = {
-    id: Date.now().toString(),
-    ...req.body,
-    status: 'pending',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
-  
-  if (!db.applications) db.applications = [];
-  db.applications.push(newApplication);
-  
-  if (writeDB(db)) {
+app.post('/api/applications', async (req, res) => {
+  try {
+    const applications = await getCollection('applications');
+    
+    const newApplication = {
+      id: Date.now().toString(),
+      ...req.body,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    applications.push(newApplication);
+    await saveCollection('applications', applications);
+    
     res.status(201).json(newApplication);
-  } else {
+  } catch (error) {
+    console.error('Error submitting application:', error);
     res.status(500).json({ error: 'Failed to submit application' });
   }
 });
