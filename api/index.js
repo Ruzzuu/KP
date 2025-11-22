@@ -212,9 +212,37 @@ const readDB = () => {
     console.log('🔍 Vercel environment:', isVercel);
     console.log('🔍 MongoDB enabled:', useMongoDB);
     
-    // ONLY copy source if MongoDB is NOT available
-    if (!useMongoDB && isVercel && !existsSync(DB_PATH) && existsSync(DB_SOURCE)) {
-      console.log('📋 MongoDB not available, copying source db.json to /tmp for Vercel...');
+    // CRITICAL: Check if MongoDB is ACTUALLY connected (not just flag)
+    const db = getDB();
+    const mongoActuallyConnected = db !== null;
+    
+    console.log('🔍 MongoDB actual connection status:', mongoActuallyConnected);
+    
+    // NEVER copy source if MongoDB URI exists (even if not connected yet)
+    // This prevents stale data resurrection on cold starts
+    if (process.env.MONGODB_URI) {
+      console.log('⚠️ MongoDB URI exists - skipping source copy to prevent data resurrection');
+      
+      // If MongoDB URI exists but not connected, use empty structure
+      // MongoDB will be used once connection is established
+      if (!mongoActuallyConnected && !existsSync(DB_PATH)) {
+        console.log('📝 Creating empty fallback structure (MongoDB will be primary)');
+        const emptyDB = {
+          users: [],
+          news: [],
+          sessions: [],
+          applications: [],
+          beasiswa: [],
+          beasiswa_applications: []
+        };
+        writeFileSync(DB_PATH, JSON.stringify(emptyDB, null, 2));
+        return emptyDB;
+      }
+    }
+    
+    // Only copy from source if ABSOLUTELY NO MongoDB configuration exists
+    if (!useMongoDB && !process.env.MONGODB_URI && isVercel && !existsSync(DB_PATH) && existsSync(DB_SOURCE)) {
+      console.log('📋 No MongoDB configured, copying source db.json to /tmp for Vercel...');
       const sourceData = readFileSync(DB_SOURCE, 'utf8');
       writeFileSync(DB_PATH, sourceData);
     }
@@ -226,7 +254,9 @@ const readDB = () => {
         users: [],
         news: [],
         sessions: [],
-        applications: []
+        applications: [],
+        beasiswa: [],
+        beasiswa_applications: []
       };
       writeFileSync(DB_PATH, JSON.stringify(defaultDB, null, 2));
       return defaultDB;
@@ -237,7 +267,7 @@ const readDB = () => {
     return JSON.parse(data);
   } catch (error) {
     console.error('❌ Database read error:', error.message);
-    return { users: [], news: [], sessions: [], applications: [] };
+    return { users: [], news: [], sessions: [], applications: [], beasiswa: [], beasiswa_applications: [] };
   }
 };
 
